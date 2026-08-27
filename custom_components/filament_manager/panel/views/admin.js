@@ -9,10 +9,8 @@ import {
   html,
   icon,
   raw,
-  selectField,
   textField,
 } from "../ui.js";
-import { spoolTypeLabel } from "../data.js";
 
 function usageChip(count) {
   if (count === 0) return html`<span class="chip muted">${t("admin.unused")}</span>`;
@@ -51,6 +49,21 @@ function masterRow({ entry, subtitle, usage, editAction, deleteAction }) {
   </div>`;
 }
 
+/**
+ * Website plus, when something is missing, how many spool types of this
+ * manufacturer still have no empty weight — so the gap is visible without
+ * opening every dialog.
+ */
+function manufacturerSubtitle(entry, data) {
+  const mine = (data.spool_types || []).filter((type) => type.manufacturer_id === entry.id);
+  const open = mine.filter(
+    (type) => type.empty_weight_g === null || type.empty_weight_g === undefined
+  ).length;
+  const website = entry.website || "—";
+  if (!open) return website;
+  return `${website} · ${t("admin.tare_open", { count: open, total: mine.length })}`;
+}
+
 function materialSubtitle(entry) {
   const temps =
     entry.nozzle_temp !== null || entry.bed_temp !== null
@@ -66,55 +79,6 @@ function materialSubtitle(entry) {
   return `${temps}${density}`;
 }
 
-/**
- * One spool type with an inline field for the weight of the bare spool.
- *
- * The value is saved on blur, like the remaining-amount fields in the manage
- * view, so setting a weight is a single click and a number.
- */
-function spoolTypeRow(entry, usage, lookup) {
-  const missing = entry.empty_weight_g === null || entry.empty_weight_g === undefined;
-  return html`<div class="row ${missing ? "needs-value" : ""}" data-spool-type="${entry.id}">
-    <div class="row-main">
-      <div class="grow">
-        <div class="name">
-          ${spoolTypeLabel(entry, lookup)} · ${fmtNumber(entry.net_weight_g)} g
-        </div>
-        <div class="sub hint">
-          ${missing ? t("admin.tare_missing") : t("admin.tare_set")}
-        </div>
-      </div>
-      <div class="row-actions">
-        ${usage > 0
-          ? html`<span class="chip"
-              >${t(usage === 1 ? "admin.used_in_one" : "admin.used_in", { count: usage })}</span
-            >`
-          : html`<span class="chip muted">${t("admin.unused")}</span>`}
-        <div class="num-field">
-          ${textField({
-            name: "empty_weight_g",
-            label: t("field.empty_weight_short"),
-            type: "number",
-            min: 0,
-            step: 0.1,
-            value: entry.empty_weight_g,
-            title: t("field.empty_weight_hint"),
-          })}
-        </div>
-        <button
-          class="icon-btn danger"
-          data-action="delete-spool-type"
-          data-id="${entry.id}"
-          title="${t("action.delete")}"
-          ${raw(usage > 0 ? "disabled" : "")}
-        >
-          ${icon("delete")}
-        </button>
-      </div>
-    </div>
-  </div>`;
-}
-
 /** Render the admin view. */
 export function renderAdmin(ctx) {
   const { data, isAdmin } = ctx;
@@ -128,7 +92,6 @@ export function renderAdmin(ctx) {
   }
 
   const usage = data.usage || { manufacturers: {}, materials: {}, spool_types: {} };
-  const spoolTypes = data.spool_types || [];
 
   return html`<div class="section-title">
       <span>${t("admin.title")} — ${t("admin.manufacturers")}</span>
@@ -142,7 +105,7 @@ export function renderAdmin(ctx) {
           ${data.manufacturers.map((entry) =>
             masterRow({
               entry,
-              subtitle: entry.website || "—",
+              subtitle: manufacturerSubtitle(entry, data),
               usage: usage.manufacturers[entry.id] || 0,
               editAction: "edit-manufacturer",
               deleteAction: "delete-manufacturer",
@@ -171,26 +134,22 @@ export function renderAdmin(ctx) {
           )}
         </div>`
       : html`<div class="card">${t("admin.no_materials")}</div>`}
-
-    <div class="section-title">
-      <span>${t("admin.spool_types")}</span>
-      <span class="spacer"></span>
-      <button class="btn" data-action="new-spool-type">
-        ${icon("plus")} ${t("admin.new_spool_type")}
-      </button>
-    </div>
-    <div class="hint" style="margin-bottom:12px">${t("admin.spool_types_hint")}</div>
-    ${spoolTypes.length
-      ? html`<div class="list">
-          ${spoolTypes.map((entry) =>
-            spoolTypeRow(entry, usage.spool_types[entry.id] || 0, ctx.lookup)
-          )}
-        </div>`
-      : html`<div class="card">${t("admin.no_spool_types")}</div>`}`;
+`;
 }
 
-/** Body of the manufacturer dialog. */
-export function manufacturerDialogBody(values) {
+/**
+ * Body of the manufacturer dialog.
+ *
+ * Below the master data it lists every spool type of this manufacturer with
+ * its empty weight, because that weight belongs to the manufacturer's spools
+ * rather than to a single colour. The rows appear on their own as soon as an
+ * inventory entry uses the combination.
+ */
+export function manufacturerDialogBody(values, data, lookup) {
+  const spoolTypes = (data.spool_types || []).filter(
+    (type) => type.manufacturer_id === values.id
+  );
+
   return html`<div class="form-grid">
     <div class="span-2">
       ${textField({ name: "name", label: t("field.name"), value: values.name })}
@@ -211,6 +170,41 @@ export function manufacturerDialogBody(values) {
       step: 1,
       value: values.sort_order,
     })}
+
+    <div class="span-2">
+      <div class="section-title" style="margin:8px 0 4px">${t("admin.spool_types")}</div>
+      <div class="hint" style="margin-bottom:10px">${t("admin.spool_types_hint")}</div>
+      ${spoolTypes.length
+        ? html`<div class="tare-list">
+            ${spoolTypes.map((type) => {
+              const usage = (data.usage?.spool_types || {})[type.id] || 0;
+              return html`<div class="tare-row">
+                <div class="grow">
+                  <div class="name">
+                    ${lookup.materialName(type.material_id)} ·
+                    ${fmtNumber(type.net_weight_g)} g
+                  </div>
+                  <div class="hint">
+                    ${usage
+                      ? t(usage === 1 ? "admin.used_in_one" : "admin.used_in", { count: usage })
+                      : t("admin.unused")}
+                  </div>
+                </div>
+                <div class="num-field">
+                  ${textField({
+                    name: `spool_type__${type.id}`,
+                    label: t("field.empty_weight_short"),
+                    type: "number",
+                    min: 0,
+                    step: 0.1,
+                    value: values[`spool_type__${type.id}`],
+                  })}
+                </div>
+              </div>`;
+            })}
+          </div>`
+        : html`<div class="hint">${t("admin.no_spool_types_for_manufacturer")}</div>`}
+    </div>
   </div>`;
 }
 
@@ -269,53 +263,5 @@ export function newMaterialValues(data) {
     bed_temp: "",
     density: "",
     sort_order: data.materials.length,
-  };
-}
-
-
-/** Body of the dialog that adds a combination which is not in stock yet. */
-export function spoolTypeDialogBody(values, data) {
-  return html`<div class="form-grid">
-    ${selectField({
-      name: "manufacturer_id",
-      label: t("field.manufacturer"),
-      value: values.manufacturer_id,
-      placeholder: "—",
-      options: data.manufacturers.map((entry) => ({ value: entry.id, label: entry.name })),
-    })}
-    ${selectField({
-      name: "material_id",
-      label: t("field.material"),
-      value: values.material_id,
-      placeholder: "—",
-      options: data.materials.map((entry) => ({ value: entry.id, label: entry.name })),
-    })}
-    ${selectField({
-      name: "net_weight_g",
-      label: t("field.net_weight"),
-      value: values.net_weight_g,
-      options: [250, 500, 750, 1000, 2000, 3000].map((value) => ({
-        value,
-        label: `${value} g`,
-      })),
-    })}
-    ${textField({
-      name: "empty_weight_g",
-      label: t("field.empty_weight"),
-      type: "number",
-      min: 0,
-      step: 0.1,
-      value: values.empty_weight_g,
-      hint: t("field.empty_weight_hint"),
-    })}
-  </div>`;
-}
-
-export function newSpoolTypeValues(data) {
-  return {
-    manufacturer_id: data.manufacturers[0]?.id || "",
-    material_id: data.materials[0]?.id || "",
-    net_weight_g: 1000,
-    empty_weight_g: "",
   };
 }

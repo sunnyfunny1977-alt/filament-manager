@@ -10,7 +10,7 @@ Seitenleisten-Panel, ohne YAML-Gefrickel.
 - **Übersicht** – Standardansicht mit allen Rollen, Farbpunkt, Restmengen und Summen
 - **Verwalten** – Bestand pflegen: Einträge anlegen, OVP-Rollen zählen, Rollen anbrechen,
   Restmengen eintragen, aufgebrauchte Rollen entfernen
-- **Admin** – Hersteller, Filament-Sorten und Leergewichte pflegen (nur für HA-Administratoren)
+- **Admin** – Hersteller (inkl. Leergewichte der Rollen) und Filament-Sorten pflegen (nur für HA-Administratoren)
 - **Sensoren** – Rollenzahl, Gesamtgewicht, Lagerwert und knapper Bestand für Automationen
 - **Services** – Bestand per Automation ändern, z. B. über einen NFC-Tag an der Rolle
 
@@ -39,17 +39,24 @@ geschätzte Prozent, gewogene Gramm oder beides. Nichts wird automatisch umgerec
 ### Leergewichte und Wiegen
 
 Das Gewicht der leeren Spule ist keine Eigenschaft einer Farbe, sondern der **Rollensorte**. Es
-lebt deshalb im Admin-Bereich unter **Leergewichte**, mit einer Zeile je Kombination aus
-**Hersteller + Sorte + Rollengröße**:
+wird deshalb im Admin-Bereich **beim Hersteller** gepflegt: Im Fenster mit Name und Website steht
+darunter eine Liste der Rollensorten dieses Herstellers, je mit eigenem Feld.
 
-| Kombination | Leergewicht |
-|---|---|
-| Anycubic PLA · 1000 g | 130,8 g |
-| Cailab PLA+ · 250 g | – |
+```
+Hersteller bearbeiten — Anycubic
+  Name      Anycubic
+  Website   https://www.anycubic.com
 
-- Eine Zeile **entsteht automatisch**, sobald du einen Eintrag mit dieser Kombination anlegst
+  Leergewichte der Rollen
+  PLA · 1000 g       In 12 Einträgen verwendet     [ 130,8 ] g
+  Silk PLA · 1000 g  In 2 Einträgen verwendet      [      ] g
+```
+
+- Eine Zeile **entsteht automatisch**, sobald ein Eintrag diese Kombination erstmals verwendet
 - Jeder weitere Eintrag derselben Kombination übernimmt den Wert von selbst
-- Die Rollengröße gehört zum Schlüssel, weil eine 250-g-Spule leer weniger wiegt als eine 1-kg-Spule
+- Die Rollengröße gehört dazu, weil eine 250-g-Spule leer weniger wiegt als eine 1-kg-Spule
+- In der Hersteller-Liste steht bei Bedarf „2 von 3 Rollensorten ohne Leergewicht", damit man
+  Lücken sieht, ohne jedes Fenster zu öffnen
 
 Ist ein Leergewicht hinterlegt, erscheint bei jeder angebrochenen Rolle im Bereich **Verwalten**
 das Feld **Gewogen (g)**. Rolle auf die Waage, Wert eintragen:
@@ -67,11 +74,8 @@ Die Prozentangabe wird nie automatisch verändert. Ohne hinterlegtes Leergewicht
 gesperrt, und ein Wiegewert über den Service wird mit einer Meldung abgelehnt statt still falsch
 verrechnet.
 
-Für die Sensoren wird ein Gesamtgewicht gebraucht, dafür gilt diese Reihenfolge:
-
-1. `Restmenge in Gramm`, wenn gesetzt
-2. sonst `Restmenge in Prozent × Filament pro Rolle ÷ 100`
-3. sonst `0 g`
+Eine Rollensorte bleibt erhalten, auch wenn ihr letzter Eintrag gelöscht wird – kaufst du das
+Filament später wieder, ist das Leergewicht noch bekannt.
 
 ---
 

@@ -346,9 +346,6 @@ export const panelStyles = `
     box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
     padding: 12px 14px;
   }
-  .row.needs-value {
-    border-left: 4px solid var(--warning-color, #ffa600);
-  }
   .row-main {
     display: flex;
     align-items: center;
@@ -374,6 +371,23 @@ export const panelStyles = `
     font-variant-numeric: tabular-nums;
   }
   .counter .icon-btn { width: 30px; height: 30px; border: none; }
+
+  /* empty weights inside the manufacturer dialog */
+  .tare-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid var(--divider-color, #e0e0e0);
+    padding-top: 12px;
+  }
+  .tare-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  .tare-row .grow { flex: 1; min-width: 0; }
+  .tare-row .name { font-size: 14px; font-weight: 500; }
+  .tare-row .num-field { width: 120px; flex: 0 0 auto; }
 
   .sub-list {
     margin-top: 12px;

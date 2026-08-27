@@ -10,7 +10,6 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
 from .const import (
-    ERR_DUPLICATE,
     ERR_IN_USE,
     ERR_INVALID,
     ERR_NO_EMPTY_WEIGHT,
@@ -367,19 +366,12 @@ class FilamentStore:
             if self._key_of(item, "spool_net_weight_g") == key
         )
 
-    def add_spool_type(self, raw: dict[str, Any]) -> SpoolType:
-        """Create a spool type by hand, for a combination not yet in stock."""
-        record = normalize_spool_type({**raw, "id": None})
-        self._find("manufacturers", record["manufacturer_id"])
-        self._find("materials", record["material_id"])
-        if self._find_spool_type(self._key_of(record, "net_weight_g")) is not None:
-            raise FilamentError(ERR_DUPLICATE, collection="spool_types")
-        self._data["spool_types"].append(record)
-        self._save_and_notify()
-        return record
-
     def update_spool_type(self, record_id: str, raw: dict[str, Any]) -> SpoolType:
         """Set the empty-spool weight and pull weighed spools along.
+
+        Spool types are created automatically from the items and are never
+        removed: a combination whose last item is gone keeps its weight, so
+        buying that filament again does not mean measuring the spool again.
 
         Every opened spool that was actually weighed keeps its reading, so the
         remaining amount is recomputed against the corrected tare. Amounts that
@@ -391,16 +383,6 @@ class FilamentStore:
         self._recompute_weighed_spools(existing)
         self._save_and_notify()
         return existing
-
-    def delete_spool_type(self, record_id: str) -> None:
-        """Delete a spool type that no item belongs to."""
-        existing = self._find("spool_types", record_id)
-        if used := self._spool_type_usage(existing):
-            raise FilamentError(ERR_IN_USE, count=used)
-        self._data["spool_types"] = [
-            entry for entry in self._data["spool_types"] if entry["id"] != record_id
-        ]
-        self._save_and_notify()
 
     def _recompute_weighed_spools(self, spool_type: SpoolType) -> None:
         """Recompute the remaining grams of every weighed spool of a type."""

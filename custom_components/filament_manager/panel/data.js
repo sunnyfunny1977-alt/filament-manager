@@ -45,13 +45,6 @@ export function itemTare(item, lookup) {
   return spoolType ? spoolType.empty_weight_g : null;
 }
 
-/** A readable name for a spool type, e.g. "Anycubic Silk PLA 1000 g". */
-export function spoolTypeLabel(spoolType, lookup) {
-  return `${lookup.manufacturerName(spoolType.manufacturer_id)} ${lookup.materialName(
-    spoolType.material_id
-  )}`;
-}
-
 /** "Sunlu PETG Black" — the human readable name of an entry. */
 export function itemLabel(item, lookup) {
   return [

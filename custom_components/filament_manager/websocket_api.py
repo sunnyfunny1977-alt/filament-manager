@@ -56,9 +56,6 @@ MATERIAL_FIELDS = {
 }
 
 SPOOL_TYPE_FIELDS = {
-    vol.Optional("manufacturer_id"): str,
-    vol.Optional("material_id"): str,
-    vol.Optional("net_weight_g"): vol.Any(float, int, str, None),
     vol.Optional("empty_weight_g"): vol.Any(float, int, str, None),
 }
 
@@ -95,9 +92,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
         handle_material_create,
         handle_material_update,
         handle_material_delete,
-        handle_spool_type_create,
         handle_spool_type_update,
-        handle_spool_type_delete,
         handle_item_create,
         handle_item_update,
         handle_item_delete,
@@ -289,25 +284,6 @@ def handle_material_delete(
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/spool_type/create", **SPOOL_TYPE_FIELDS}
-)
-@websocket_api.require_admin
-@callback
-def handle_spool_type_create(
-    hass: HomeAssistant,
-    connection: websocket_api.ActiveConnection,
-    msg: dict[str, Any],
-) -> None:
-    """Create a spool type for a combination that is not in stock yet."""
-    _answer(
-        hass,
-        connection,
-        msg,
-        lambda store: store.add_spool_type(_payload(msg, SPOOL_TYPE_FIELDS)),
-    )
-
-
-@websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/spool_type/update",
         vol.Required("spool_type_id"): str,
@@ -329,22 +305,6 @@ def handle_spool_type_update(
         lambda store: store.update_spool_type(
             msg["spool_type_id"], _payload(msg, SPOOL_TYPE_FIELDS)
         ),
-    )
-
-
-@websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/spool_type/delete", vol.Required("spool_type_id"): str}
-)
-@websocket_api.require_admin
-@callback
-def handle_spool_type_delete(
-    hass: HomeAssistant,
-    connection: websocket_api.ActiveConnection,
-    msg: dict[str, Any],
-) -> None:
-    """Delete a spool type that no item belongs to."""
-    _answer(
-        hass, connection, msg, lambda store: store.delete_spool_type(msg["spool_type_id"])
     )
 
 

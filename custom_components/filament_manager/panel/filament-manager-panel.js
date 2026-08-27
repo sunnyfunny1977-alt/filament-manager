@@ -27,9 +27,7 @@ import {
   materialDialogBody,
   newManufacturerValues,
   newMaterialValues,
-  newSpoolTypeValues,
   renderAdmin,
-  spoolTypeDialogBody,
 } from "./views/admin.js";
 
 const DOMAIN = "filament_manager";
@@ -299,13 +297,10 @@ class FilamentManagerPanel extends HTMLElement {
       body = itemDialogBody(values, this._data);
       actions = dialogActions({ confirmLabel: t("action.save") });
     } else if (this._dialog.kind === "manufacturer") {
-      body = manufacturerDialogBody(values);
+      body = manufacturerDialogBody(values, this._data, this._lookup);
       actions = dialogActions({ confirmLabel: t("action.save") });
     } else if (this._dialog.kind === "material") {
       body = materialDialogBody(values);
-      actions = dialogActions({ confirmLabel: t("action.save") });
-    } else if (this._dialog.kind === "spool_type") {
-      body = spoolTypeDialogBody(values, this._data);
       actions = dialogActions({ confirmLabel: t("action.save") });
     } else {
       body = html`<p>${this._dialog.text}</p>`;
@@ -432,16 +427,6 @@ class FilamentManagerPanel extends HTMLElement {
     if (!target || !target.dataset) return;
     if (this._applyFilter(target)) return;
     if (this._captureDialogField(target)) return;
-    // Inline editing of the empty weight in the admin list.
-    const spoolTypeRow = target.closest("[data-spool-type]");
-    if (spoolTypeRow && target.dataset.field === "empty_weight_g") {
-      this._call({
-        type: `${DOMAIN}/spool_type/update`,
-        spool_type_id: spoolTypeRow.dataset.spoolType,
-        empty_weight_g: target.value === "" ? null : target.value,
-      }).catch(() => {});
-      return;
-    }
     // Inline editing of an opened spool in the manage view.
     const editor = target.closest(".spool-edit");
     if (editor && target.dataset.field) {
@@ -623,7 +608,19 @@ class FilamentManagerPanel extends HTMLElement {
           mode: "edit",
           id: entry.id,
           title: t("dialog.manufacturer.edit"),
-          values: { name: entry.name, website: entry.website, sort_order: entry.sort_order },
+          values: {
+            id: entry.id,
+            name: entry.name,
+            website: entry.website,
+            sort_order: entry.sort_order,
+            // One field per spool type of this manufacturer, saved together
+            // with the master data when the dialog is confirmed.
+            ...Object.fromEntries(
+              (this._data.spool_types || [])
+                .filter((type) => type.manufacturer_id === entry.id)
+                .map((type) => [`spool_type__${type.id}`, type.empty_weight_g ?? ""])
+            ),
+          },
         });
       },
 
@@ -692,35 +689,6 @@ class FilamentManagerPanel extends HTMLElement {
         });
       },
 
-      "new-spool-type": () =>
-        this._openDialog({
-          kind: "spool_type",
-          mode: "new",
-          title: t("dialog.spool_type.new"),
-          values: newSpoolTypeValues(this._data),
-        }),
-
-      "delete-spool-type": (dataset) => {
-        const entry = (this._data.spool_types || []).find((one) => one.id === dataset.id);
-        if (!entry) return;
-        const used = (this._data.usage.spool_types || {})[entry.id] || 0;
-        const name = `${this._lookup.manufacturerName(entry.manufacturer_id)} ${this._lookup.materialName(
-          entry.material_id
-        )} ${entry.net_weight_g} g`;
-        if (used > 0) {
-          this._toast(this._blockedMessage(name, used), true);
-          return;
-        }
-        this._confirm({
-          title: t("admin.delete_spool_type_title"),
-          text: t("admin.delete_text", { name }),
-          onConfirm: async () => {
-            await this._call({ type: `${DOMAIN}/spool_type/delete`, spool_type_id: entry.id });
-            this._toast(t("toast.deleted"));
-          },
-        });
-      },
-
       // ---- dialog ----
       "dialog-backdrop": () => this._closeDialog(),
       "dialog-cancel": () => this._closeDialog(),
@@ -739,7 +707,7 @@ class FilamentManagerPanel extends HTMLElement {
       return;
     }
 
-    if (kind === "item" || kind === "spool_type") {
+    if (kind === "item") {
       if (!values.manufacturer_id || !values.material_id) {
         this._setDialogError(t("error.item_required"));
         return;
@@ -749,12 +717,7 @@ class FilamentManagerPanel extends HTMLElement {
       return;
     }
 
-    const target = {
-      item: "item",
-      manufacturer: "manufacturer",
-      material: "material",
-      spool_type: "spool_type",
-    }[kind];
+    const target = { item: "item", manufacturer: "manufacturer", material: "material" }[kind];
     const message = {
       type: `${DOMAIN}/${target}/${mode === "edit" ? "update" : "create"}`,
       ...this._cleanValues(values),
@@ -765,6 +728,7 @@ class FilamentManagerPanel extends HTMLElement {
 
     try {
       await this._call(message);
+      await this._saveSpoolTypeWeights(values);
     } catch {
       return;
     }
@@ -772,10 +736,35 @@ class FilamentManagerPanel extends HTMLElement {
     this._toast(t("toast.saved"));
   }
 
+  /**
+   * Send every empty weight the manufacturer dialog changed.
+   *
+   * They live on their own records, so the dialog collects them under
+   * `spool_type__<id>` keys and they are written after the master data.
+   */
+  async _saveSpoolTypeWeights(values) {
+    const current = new Map(
+      (this._data.spool_types || []).map((type) => [type.id, type.empty_weight_g])
+    );
+    for (const [key, value] of Object.entries(values)) {
+      if (!key.startsWith("spool_type__")) continue;
+      const id = key.slice("spool_type__".length);
+      const wanted = value === "" || value === null ? null : Number(value);
+      if (!current.has(id) || current.get(id) === wanted) continue;
+      await this._call({
+        type: `${DOMAIN}/spool_type/update`,
+        spool_type_id: id,
+        empty_weight_g: wanted,
+      });
+    }
+  }
+
   /** Turn empty form fields into nulls the backend reads as "not set". */
   _cleanValues(values) {
     const cleaned = {};
     for (const [key, value] of Object.entries(values)) {
+      // Handled separately by _saveSpoolTypeWeights.
+      if (key.startsWith("spool_type__") || key === "id") continue;
       cleaned[key] = value === "" ? null : value;
     }
     return cleaned;
