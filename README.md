@@ -29,12 +29,25 @@ Ein **Eintrag** ist eine Kombination aus Hersteller + Sorte + Farbe. Darin steck
 | Angebrochene Rollen | Liste – jede Rolle mit eigener Restmenge |
 | Durchmesser | 1,75 / 2,85 / 3,0 mm |
 | Filament pro Rolle | Nettogewicht in Gramm, z. B. 1000 g |
+| Leergewicht der Rolle | Gewicht der leeren Spule (Tara), z. B. 218 g – optional |
 | Lagerort, Notizen | Freitext |
 | Preis, Kaufdatum | Grundlage für den Lagerwert |
 | Düsen-/Betttemperatur | leer = Standard der Filament-Sorte |
 
 **Restmenge:** Prozent und Gramm sind zwei unabhängige Felder. Trage ein, was du weißt –
 geschätzte Prozent, gewogene Gramm oder beides. Nichts wird automatisch umgerechnet.
+
+**Restmenge durch Wiegen:** Ist beim Eintrag ein **Leergewicht** hinterlegt, erscheint bei jeder
+angebrochenen Rolle das Feld **Gewogen (g)**. Rolle auf die Waage legen, den angezeigten Wert
+eintragen – das Leergewicht wird abgezogen und die Restmenge in Gramm gesetzt:
+
+```
+Rest = Wiegewert − Leergewicht      z. B. 738 g − 218 g = 520 g
+```
+
+Der Wiegewert selbst wird nicht gespeichert, er ist reine Eingabehilfe. Die Prozentangabe bleibt
+unangetastet. Ohne hinterlegtes Leergewicht ist das Feld gesperrt, und ein Wiegewert über den
+Service wird mit einer Meldung abgelehnt statt still falsch verrechnet.
 
 Für die Sensoren wird ein Gesamtgewicht gebraucht, dafür gilt diese Reihenfolge:
 
@@ -133,11 +146,26 @@ graue ID-Feld kopiert die ID in die Zwischenablage.
 |---|---|
 | `filament_manager.add_spools` | OVP-Rollen hinzufügen oder abziehen (`count`, auch negativ) |
 | `filament_manager.open_spool` | Eine OVP-Rolle anbrechen (startet mit 100 %) |
-| `filament_manager.set_remaining` | Restmenge einer angebrochenen Rolle setzen |
+| `filament_manager.set_remaining` | Restmenge einer angebrochenen Rolle setzen – als Prozent, Gramm oder `gross_weight_g` (Wiegewert) |
 | `filament_manager.consume_spool` | Angebrochene Rolle als aufgebraucht entfernen |
 
 Bei `set_remaining` und `consume_spool` kann die `spool_id` weggelassen werden – dann wird
 die erste angebrochene Rolle des Eintrags verwendet.
+
+### Beispiel: Restmenge von einer smarten Waage
+
+```yaml
+automation:
+  - alias: Filamentrolle gewogen
+    triggers:
+      - trigger: state
+        entity_id: sensor.kuechenwaage_gewicht
+    actions:
+      - action: filament_manager.set_remaining
+        data:
+          item_id: a1b2c3d4e5f6
+          gross_weight_g: "{{ states('sensor.kuechenwaage_gewicht') | float }}"
+```
 
 ### Beispiel: NFC-Tag an der Rolle
 

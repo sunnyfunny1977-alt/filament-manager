@@ -62,6 +62,7 @@ class Item(TypedDict):
     color_hex: str
     diameter: float
     spool_net_weight_g: float
+    spool_empty_weight_g: float | None
     sealed_count: int
     open_spools: list[OpenSpool]
     location: str
@@ -208,6 +209,7 @@ def normalize_item(raw: dict[str, Any], existing: Item | None = None) -> Item:
         "diameter": _opt_number(base.get("diameter"), 0.5, 5) or DEFAULT_DIAMETER,
         "spool_net_weight_g": _opt_number(base.get("spool_net_weight_g"), 1, 100000)
         or DEFAULT_SPOOL_NET_WEIGHT_G,
+        "spool_empty_weight_g": _opt_number(base.get("spool_empty_weight_g"), 0, 100000),
         "sealed_count": _opt_int(base.get("sealed_count"), 0, 9999) or 0,
         "open_spools": open_spools,
         "location": _str(base.get("location")),
@@ -219,6 +221,15 @@ def normalize_item(raw: dict[str, Any], existing: Item | None = None) -> Item:
         "created_at": _str(base.get("created_at")) or utcnow_iso(),
         "updated_at": utcnow_iso(),
     }
+
+
+def net_from_gross(gross_weight_g: float, empty_weight_g: float) -> float:
+    """Return the filament left on a weighed spool.
+
+    The scale shows filament plus the empty spool, so the tare has to come off.
+    A spool cannot weigh less than nothing, hence the clamp.
+    """
+    return max(0.0, float(gross_weight_g) - float(empty_weight_g))
 
 
 def spool_remaining_grams(spool: OpenSpool, net_weight_g: float) -> float:

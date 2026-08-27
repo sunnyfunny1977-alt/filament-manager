@@ -32,6 +32,7 @@ ITEM_FIELDS = {
     vol.Optional("color_hex"): vol.Any(str, None),
     vol.Optional("diameter"): vol.Any(float, int, str, None),
     vol.Optional("spool_net_weight_g"): vol.Any(float, int, str, None),
+    vol.Optional("spool_empty_weight_g"): vol.Any(float, int, str, None),
     vol.Optional("sealed_count"): vol.Any(int, str, None),
     vol.Optional("location"): vol.Any(str, None),
     vol.Optional("notes"): vol.Any(str, None),
@@ -58,6 +59,8 @@ MATERIAL_FIELDS = {
 SPOOL_FIELDS = {
     vol.Optional("remaining_percent"): vol.Any(float, int, str, None),
     vol.Optional("remaining_grams"): vol.Any(float, int, str, None),
+    # Weighed total including the empty spool; converted by the store.
+    vol.Optional("gross_weight_g"): vol.Any(float, int, str, None),
     vol.Optional("opened_at"): vol.Any(str, None),
     vol.Optional("note"): vol.Any(str, None),
 }

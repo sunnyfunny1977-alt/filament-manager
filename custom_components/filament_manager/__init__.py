@@ -62,6 +62,9 @@ SERVICE_SET_REMAINING_SCHEMA = vol.Schema(
         vol.Optional("remaining_grams"): vol.All(
             vol.Coerce(float), vol.Range(min=0, max=100000)
         ),
+        vol.Optional("gross_weight_g"): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=100000)
+        ),
         vol.Optional("note"): cv.string,
     }
 )
@@ -176,7 +179,12 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 spool_id = _resolve_spool_id(item_id, data.get("spool_id"))
                 payload = {
                     key: data[key]
-                    for key in ("remaining_percent", "remaining_grams", "note")
+                    for key in (
+                        "remaining_percent",
+                        "remaining_grams",
+                        "gross_weight_g",
+                        "note",
+                    )
                     if key in data
                 }
                 store.update_open_spool(item_id, spool_id, payload)

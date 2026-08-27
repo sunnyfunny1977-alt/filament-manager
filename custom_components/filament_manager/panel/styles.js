@@ -164,6 +164,11 @@ export const panelStyles = `
     padding: 9px 10px;
   }
   textarea { resize: vertical; min-height: 64px; }
+  input:disabled, select:disabled, textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--divider-color, #e0e0e0);
+  }
   input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--primary-color, #03a9f4);

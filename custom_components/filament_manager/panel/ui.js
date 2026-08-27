@@ -180,12 +180,16 @@ export function textField({
   min,
   max,
   step,
+  title = "",
+  disabled = false,
   extraClass = "",
 }) {
   const attrs = [
     min !== undefined ? `min="${esc(min)}"` : "",
     max !== undefined ? `max="${esc(max)}"` : "",
     step !== undefined ? `step="${esc(step)}"` : "",
+    title ? `title="${esc(title)}"` : "",
+    disabled ? "disabled" : "",
   ].join(" ");
   const control = html`<input
     class="${extraClass}"

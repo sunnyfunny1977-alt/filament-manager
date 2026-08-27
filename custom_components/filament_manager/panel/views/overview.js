@@ -102,6 +102,9 @@ function itemCard(item, lookup) {
 
   const meta = [
     item.location ? `${t("label.location")}: ${item.location}` : "",
+    item.spool_empty_weight_g !== null && item.spool_empty_weight_g !== undefined
+      ? `${t("label.empty_weight")}: ${fmtNumber(item.spool_empty_weight_g)} g`
+      : "",
     temps.nozzle !== null ? `${t("label.nozzle")}: ${temps.nozzle} °C` : "",
     temps.bed !== null ? `${t("label.bed")}: ${temps.bed} °C` : "",
     item.price !== null && item.price !== undefined

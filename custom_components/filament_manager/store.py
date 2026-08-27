@@ -12,6 +12,7 @@ from homeassistant.helpers.storage import Store
 from .const import (
     ERR_IN_USE,
     ERR_INVALID,
+    ERR_NO_EMPTY_WEIGHT,
     ERR_NO_SEALED_SPOOLS,
     ERR_NOT_FOUND,
     SIGNAL_UPDATED,
@@ -26,6 +27,7 @@ from .models import (
     default_data,
     item_total_grams,
     item_total_spools,
+    net_from_gross,
     normalize_item,
     normalize_manufacturer,
     normalize_material,
@@ -272,15 +274,34 @@ class FilamentStore:
     def update_open_spool(
         self, item_id: str, spool_id: str, raw: dict[str, Any]
     ) -> OpenSpool:
-        """Update the remaining amount or note of an opened spool."""
+        """Update the remaining amount or note of an opened spool.
+
+        ``gross_weight_g`` is an input aid rather than a stored field: put the
+        spool on a scale, send what it reads, and the empty-spool weight of the
+        item is subtracted to get the remaining filament.
+        """
         existing = self._find("items", item_id)
+        payload = self._apply_gross_weight(existing, raw)
         for spool in existing["open_spools"]:
             if spool.get("id") == spool_id:
-                spool.update(normalize_open_spool({**raw, "id": spool_id}, spool))
+                spool.update(normalize_open_spool({**payload, "id": spool_id}, spool))
                 existing["updated_at"] = utcnow_iso()
                 self._save_and_notify()
                 return spool
         raise FilamentError(ERR_NOT_FOUND, collection="open_spools", id=spool_id)
+
+    def _apply_gross_weight(self, item: Item, raw: dict[str, Any]) -> dict[str, Any]:
+        """Turn a weighed gross value into remaining grams, if one was sent."""
+        if raw.get("gross_weight_g") in (None, ""):
+            return {key: value for key, value in raw.items() if key != "gross_weight_g"}
+
+        empty = item.get("spool_empty_weight_g")
+        if empty is None:
+            raise FilamentError(ERR_NO_EMPTY_WEIGHT, item_id=item["id"])
+
+        payload = {key: value for key, value in raw.items() if key != "gross_weight_g"}
+        payload["remaining_grams"] = net_from_gross(float(raw["gross_weight_g"]), float(empty))
+        return payload
 
     def consume_spool(self, item_id: str, spool_id: str) -> None:
         """Remove an opened spool that has been used up."""

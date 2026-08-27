@@ -53,6 +53,15 @@ set_remaining:
           step: 1
           unit_of_measurement: g
           mode: box
+    gross_weight_g:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
     note:
       required: false
       selector:

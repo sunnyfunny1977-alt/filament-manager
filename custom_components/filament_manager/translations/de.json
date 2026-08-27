@@ -27,13 +27,27 @@
   },
   "entity": {
     "sensor": {
-      "total_spools": { "name": "Rollen gesamt" },
-      "sealed_spools": { "name": "Rollen OVP" },
-      "open_spools": { "name": "Rollen angebrochen" },
-      "total_weight": { "name": "Filament gesamt" },
-      "entry_count": { "name": "Einträge" },
-      "inventory_value": { "name": "Lagerwert" },
-      "low_stock": { "name": "Knapper Bestand" }
+      "total_spools": {
+        "name": "Rollen gesamt"
+      },
+      "sealed_spools": {
+        "name": "Rollen OVP"
+      },
+      "open_spools": {
+        "name": "Rollen angebrochen"
+      },
+      "total_weight": {
+        "name": "Filament gesamt"
+      },
+      "entry_count": {
+        "name": "Einträge"
+      },
+      "inventory_value": {
+        "name": "Lagerwert"
+      },
+      "low_stock": {
+        "name": "Knapper Bestand"
+      }
     }
   },
   "services": {
@@ -81,7 +95,14 @@
           "name": "Restmenge in Gramm",
           "description": "Restmenge in Gramm, zum Beispiel nach dem Wiegen der Rolle."
         },
-        "note": { "name": "Notiz", "description": "Optionale Notiz zu dieser Rolle." }
+        "gross_weight_g": {
+          "name": "Gewogen gesamt (g)",
+          "description": "Was die Waage für die komplette Rolle anzeigt. Das Leergewicht des Eintrags wird abgezogen und ergibt die Restmenge."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optionale Notiz zu dieser Rolle."
+        }
       }
     },
     "consume_spool": {
@@ -100,6 +121,11 @@
     }
   },
   "exceptions": {
-    "not_loaded": { "message": "Der Filament Manager ist nicht geladen." }
+    "not_loaded": {
+      "message": "Der Filament Manager ist nicht geladen."
+    },
+    "no_empty_weight": {
+      "message": "Für diesen Eintrag ist kein Leergewicht hinterlegt, daher lässt sich ein Wiegewert nicht umrechnen."
+    }
   }
 }

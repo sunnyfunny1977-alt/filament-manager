@@ -27,13 +27,27 @@
   },
   "entity": {
     "sensor": {
-      "total_spools": { "name": "Spools total" },
-      "sealed_spools": { "name": "Sealed spools" },
-      "open_spools": { "name": "Opened spools" },
-      "total_weight": { "name": "Filament total" },
-      "entry_count": { "name": "Entries" },
-      "inventory_value": { "name": "Inventory value" },
-      "low_stock": { "name": "Low stock" }
+      "total_spools": {
+        "name": "Spools total"
+      },
+      "sealed_spools": {
+        "name": "Sealed spools"
+      },
+      "open_spools": {
+        "name": "Opened spools"
+      },
+      "total_weight": {
+        "name": "Filament total"
+      },
+      "entry_count": {
+        "name": "Entries"
+      },
+      "inventory_value": {
+        "name": "Inventory value"
+      },
+      "low_stock": {
+        "name": "Low stock"
+      }
     }
   },
   "services": {
@@ -81,7 +95,14 @@
           "name": "Remaining in grams",
           "description": "Remaining amount in grams, for example after weighing the spool."
         },
-        "note": { "name": "Note", "description": "Optional note for this spool." }
+        "gross_weight_g": {
+          "name": "Weighed total (g)",
+          "description": "What the scale shows for the whole spool. The empty-spool weight of the entry is subtracted to get the remaining filament."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note for this spool."
+        }
       }
     },
     "consume_spool": {
@@ -100,6 +121,11 @@
     }
   },
   "exceptions": {
-    "not_loaded": { "message": "Filament Manager is not loaded." }
+    "not_loaded": {
+      "message": "Filament Manager is not loaded."
+    },
+    "no_empty_weight": {
+      "message": "No empty-spool weight is set for this entry, so a weighed total cannot be converted."
+    }
   }
 }

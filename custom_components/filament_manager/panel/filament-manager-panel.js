@@ -505,6 +505,7 @@ class FilamentManagerPanel extends HTMLElement {
             color_hex: item.color_hex,
             diameter: item.diameter,
             spool_net_weight_g: item.spool_net_weight_g,
+            spool_empty_weight_g: item.spool_empty_weight_g ?? "",
             sealed_count: item.sealed_count,
             location: item.location,
             price: item.price ?? "",

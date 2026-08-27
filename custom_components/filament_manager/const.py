@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "filament_manager"
-VERSION: Final = "1.0.1"
+VERSION: Final = "1.1.0"
 
 # Storage
 STORAGE_KEY: Final = DOMAIN
@@ -36,6 +36,7 @@ VALID_DIAMETERS: Final = (1.75, 2.85, 3.0)
 ERR_NOT_FOUND: Final = "not_found"
 ERR_IN_USE: Final = "in_use"
 ERR_NO_SEALED_SPOOLS: Final = "no_sealed_spools"
+ERR_NO_EMPTY_WEIGHT: Final = "no_empty_weight"
 ERR_DUPLICATE: Final = "duplicate"
 ERR_INVALID: Final = "invalid_data"
 

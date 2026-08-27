@@ -26,6 +26,7 @@ const DIAMETERS = [1.75, 2.85, 3.0];
 
 function openSpoolEditor(item, spool, index) {
   const net = Number(item.spool_net_weight_g || 0);
+  const hasTare = item.spool_empty_weight_g !== null && item.spool_empty_weight_g !== undefined;
   return html`<div class="spool-edit" data-item="${item.id}" data-spool="${spool.id}">
     <div class="grow">
       <div class="open-row">
@@ -57,6 +58,20 @@ function openSpoolEditor(item, spool, index) {
         value: spool.remaining_grams,
       })}
     </div>
+    <div class="num-field">
+      ${textField({
+        name: "gross_weight_g",
+        label: t("field.gross_weight"),
+        type: "number",
+        min: 0,
+        step: 1,
+        // Never prefilled: this is a calculator input, not a stored value.
+        value: "",
+        placeholder: hasTare ? "" : "—",
+        disabled: !hasTare,
+        title: hasTare ? t("field.gross_weight_hint") : t("field.gross_weight_disabled"),
+      })}
+    </div>
     <div class="grow">
       ${textField({ name: "note", label: t("field.note"), value: spool.note })}
     </div>
@@ -73,6 +88,7 @@ function openSpoolEditor(item, spool, index) {
 
 function itemRow(item, ctx) {
   const { lookup, state, isAdmin } = ctx;
+  const hasTare = item.spool_empty_weight_g !== null && item.spool_empty_weight_g !== undefined;
   const sealed = Number(item.sealed_count || 0);
   const open = item.open_spools || [];
   const expanded = state.expanded.has(item.id);
@@ -87,7 +103,9 @@ function itemRow(item, ctx) {
         </div>
         <div class="sub hint">
           ${fmtDiameter(item.diameter)} · ${fmtNumber(item.spool_net_weight_g)} g ·
-          ${fmtWeight(itemGrams(item))}${item.location ? ` · ${item.location}` : ""}
+          ${fmtWeight(itemGrams(item))}${hasTare
+            ? ` · ${t("label.empty_weight")} ${fmtNumber(item.spool_empty_weight_g)} g`
+            : ""}${item.location ? ` · ${item.location}` : ""}
         </div>
       </div>
 
@@ -171,7 +189,12 @@ function itemRow(item, ctx) {
           <div class="section-title" style="margin:0">
             ${t("manage.open_spools_title")}
           </div>
-          <div class="hint">${t("field.remaining_hint")}</div>
+          <div class="hint">
+            ${t("field.remaining_hint")}
+            ${item.spool_empty_weight_g !== null && item.spool_empty_weight_g !== undefined
+              ? ` ${t("field.gross_weight_hint")}`
+              : ` ${t("field.gross_weight_disabled")}`}
+          </div>
           ${open.map((spool, index) => openSpoolEditor(item, spool, index))}
         </div>`
       : ""}
@@ -284,6 +307,15 @@ export function itemDialogBody(values, data) {
       value: values.spool_net_weight_g,
       options: NET_WEIGHT_PRESETS.map((value) => ({ value, label: `${value} g` })),
     })}
+    ${textField({
+      name: "spool_empty_weight_g",
+      label: t("field.empty_weight"),
+      type: "number",
+      min: 0,
+      step: 1,
+      value: values.spool_empty_weight_g,
+      hint: t("field.empty_weight_hint"),
+    })}
 
     ${textField({
       name: "sealed_count",
@@ -351,6 +383,7 @@ export function newItemValues(data) {
     color_hex: "#9e9e9e",
     diameter: 1.75,
     spool_net_weight_g: 1000,
+    spool_empty_weight_g: "",
     sealed_count: 1,
     location: "",
     price: "",

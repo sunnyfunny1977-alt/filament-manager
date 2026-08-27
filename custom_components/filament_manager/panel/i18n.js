@@ -55,6 +55,7 @@ export function translateError(error) {
     "in_use",
     "not_found",
     "no_sealed_spools",
+    "no_empty_weight",
     "invalid_data",
     "not_loaded",
     "unauthorized",
