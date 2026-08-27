@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "filament_manager"
-VERSION: Final = "1.0.0"
+VERSION: Final = "1.0.1"
 
 # Storage
 STORAGE_KEY: Final = DOMAIN

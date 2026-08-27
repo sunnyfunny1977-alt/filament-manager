@@ -1,7 +1,11 @@
 """Websocket commands used by the Filament Manager panel.
 
 Read commands are available to every logged-in user, all mutating commands
-require an administrator. The panel keeps itself up to date through the
+require an administrator.
+
+Record ids travel as ``manufacturer_id`` / ``material_id`` / ``item_id`` rather
+than a plain ``id``: the websocket envelope reserves ``id`` for the message
+number, and the client overwrites any ``id`` a caller puts in the payload. The panel keeps itself up to date through the
 ``subscribe`` command, which pushes a fresh snapshot after every change.
 """
 
@@ -166,7 +170,7 @@ def handle_manufacturer_create(
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/manufacturer/update",
-        vol.Required("id"): str,
+        vol.Required("manufacturer_id"): str,
         **MANUFACTURER_FIELDS,
     }
 )
@@ -183,13 +187,13 @@ def handle_manufacturer_update(
         connection,
         msg,
         lambda store: store.update_manufacturer(
-            msg["id"], _payload(msg, MANUFACTURER_FIELDS)
+            msg["manufacturer_id"], _payload(msg, MANUFACTURER_FIELDS)
         ),
     )
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/manufacturer/delete", vol.Required("id"): str}
+    {vol.Required("type"): f"{DOMAIN}/manufacturer/delete", vol.Required("manufacturer_id"): str}
 )
 @websocket_api.require_admin
 @callback
@@ -199,7 +203,9 @@ def handle_manufacturer_delete(
     msg: dict[str, Any],
 ) -> None:
     """Delete a manufacturer that is not in use."""
-    _answer(hass, connection, msg, lambda store: store.delete_manufacturer(msg["id"]))
+    _answer(
+        hass, connection, msg, lambda store: store.delete_manufacturer(msg["manufacturer_id"])
+    )
 
 
 # ----------------------------------------------------------------------
@@ -229,7 +235,7 @@ def handle_material_create(
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/material/update",
-        vol.Required("id"): str,
+        vol.Required("material_id"): str,
         **MATERIAL_FIELDS,
     }
 )
@@ -245,12 +251,14 @@ def handle_material_update(
         hass,
         connection,
         msg,
-        lambda store: store.update_material(msg["id"], _payload(msg, MATERIAL_FIELDS)),
+        lambda store: store.update_material(
+            msg["material_id"], _payload(msg, MATERIAL_FIELDS)
+        ),
     )
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/material/delete", vol.Required("id"): str}
+    {vol.Required("type"): f"{DOMAIN}/material/delete", vol.Required("material_id"): str}
 )
 @websocket_api.require_admin
 @callback
@@ -260,7 +268,7 @@ def handle_material_delete(
     msg: dict[str, Any],
 ) -> None:
     """Delete a filament type that is not in use."""
-    _answer(hass, connection, msg, lambda store: store.delete_material(msg["id"]))
+    _answer(hass, connection, msg, lambda store: store.delete_material(msg["material_id"]))
 
 
 # ----------------------------------------------------------------------
@@ -283,7 +291,11 @@ def handle_item_create(
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/item/update", vol.Required("id"): str, **ITEM_FIELDS}
+    {
+        vol.Required("type"): f"{DOMAIN}/item/update",
+        vol.Required("item_id"): str,
+        **ITEM_FIELDS,
+    }
 )
 @websocket_api.require_admin
 @callback
@@ -297,12 +309,12 @@ def handle_item_update(
         hass,
         connection,
         msg,
-        lambda store: store.update_item(msg["id"], _payload(msg, ITEM_FIELDS)),
+        lambda store: store.update_item(msg["item_id"], _payload(msg, ITEM_FIELDS)),
     )
 
 
 @websocket_api.websocket_command(
-    {vol.Required("type"): f"{DOMAIN}/item/delete", vol.Required("id"): str}
+    {vol.Required("type"): f"{DOMAIN}/item/delete", vol.Required("item_id"): str}
 )
 @websocket_api.require_admin
 @callback
@@ -312,13 +324,13 @@ def handle_item_delete(
     msg: dict[str, Any],
 ) -> None:
     """Delete an inventory item."""
-    _answer(hass, connection, msg, lambda store: store.delete_item(msg["id"]))
+    _answer(hass, connection, msg, lambda store: store.delete_item(msg["item_id"]))
 
 
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/item/set_sealed",
-        vol.Required("id"): str,
+        vol.Required("item_id"): str,
         vol.Required("sealed_count"): vol.All(vol.Coerce(int), vol.Range(min=0, max=9999)),
     }
 )
@@ -334,7 +346,7 @@ def handle_item_set_sealed(
         hass,
         connection,
         msg,
-        lambda store: store.set_sealed_count(msg["id"], msg["sealed_count"]),
+        lambda store: store.set_sealed_count(msg["item_id"], msg["sealed_count"]),
     )
 
 

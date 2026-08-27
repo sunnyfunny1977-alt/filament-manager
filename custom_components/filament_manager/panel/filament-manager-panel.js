@@ -523,7 +523,7 @@ class FilamentManagerPanel extends HTMLElement {
           title: t("manage.delete_title"),
           text: t("manage.delete_text", { name: itemLabel(item, this._lookup) }),
           onConfirm: async () => {
-            await this._call({ type: `${DOMAIN}/item/delete`, id: item.id });
+            await this._call({ type: `${DOMAIN}/item/delete`, item_id: item.id });
             this._toast(t("toast.deleted"));
           },
         });
@@ -534,7 +534,7 @@ class FilamentManagerPanel extends HTMLElement {
         if (!item) return;
         ws({
           type: `${DOMAIN}/item/set_sealed`,
-          id: item.id,
+          item_id: item.id,
           sealed_count: Number(item.sealed_count || 0) + 1,
         });
       },
@@ -544,7 +544,7 @@ class FilamentManagerPanel extends HTMLElement {
         if (!item || Number(item.sealed_count || 0) < 1) return;
         ws({
           type: `${DOMAIN}/item/set_sealed`,
-          id: item.id,
+          item_id: item.id,
           sealed_count: Number(item.sealed_count) - 1,
         });
       },
@@ -623,7 +623,10 @@ class FilamentManagerPanel extends HTMLElement {
           title: t("admin.delete_manufacturer_title"),
           text: t("admin.delete_text", { name: entry.name }),
           onConfirm: async () => {
-            await this._call({ type: `${DOMAIN}/manufacturer/delete`, id: entry.id });
+            await this._call({
+              type: `${DOMAIN}/manufacturer/delete`,
+              manufacturer_id: entry.id,
+            });
             this._toast(t("toast.deleted"));
           },
         });
@@ -667,7 +670,7 @@ class FilamentManagerPanel extends HTMLElement {
           title: t("admin.delete_material_title"),
           text: t("admin.delete_text", { name: entry.name }),
           onConfirm: async () => {
-            await this._call({ type: `${DOMAIN}/material/delete`, id: entry.id });
+            await this._call({ type: `${DOMAIN}/material/delete`, material_id: entry.id });
             this._toast(t("toast.deleted"));
           },
         });
@@ -706,7 +709,9 @@ class FilamentManagerPanel extends HTMLElement {
       type: `${DOMAIN}/${target}/${mode === "edit" ? "update" : "create"}`,
       ...this._cleanValues(values),
     };
-    if (mode === "edit") message.id = id;
+    // The record id must not be sent as "id" — the websocket client uses that
+    // key for the message number and would overwrite it.
+    if (mode === "edit") message[`${target}_id`] = id;
 
     try {
       await this._call(message);
