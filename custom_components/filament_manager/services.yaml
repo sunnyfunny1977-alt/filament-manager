@@ -1,0 +1,72 @@
+add_spools:
+  fields:
+    item_id:
+      required: true
+      example: a1b2c3d4e5f6
+      selector:
+        text:
+    count:
+      required: false
+      default: 1
+      selector:
+        number:
+          min: -999
+          max: 999
+          step: 1
+          mode: box
+
+open_spool:
+  fields:
+    item_id:
+      required: true
+      example: a1b2c3d4e5f6
+      selector:
+        text:
+
+set_remaining:
+  fields:
+    item_id:
+      required: true
+      example: a1b2c3d4e5f6
+      selector:
+        text:
+    spool_id:
+      required: false
+      example: f6e5d4c3b2a1
+      selector:
+        text:
+    remaining_percent:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+          mode: slider
+    remaining_grams:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 1
+          unit_of_measurement: g
+          mode: box
+    note:
+      required: false
+      selector:
+        text:
+
+consume_spool:
+  fields:
+    item_id:
+      required: true
+      example: a1b2c3d4e5f6
+      selector:
+        text:
+    spool_id:
+      required: false
+      example: f6e5d4c3b2a1
+      selector:
+        text:

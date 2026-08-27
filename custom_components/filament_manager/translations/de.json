@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Filament Manager",
+        "description": "Legt den Seitenleisten-Eintrag \"Filament\" und die Übersichts-Sensoren an. Hersteller und Filament-Sorten sind vorbelegt und lassen sich im Admin-Bereich ändern."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Der Filament Manager ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen des Filament Managers",
+        "data": {
+          "low_stock_threshold": "Schwelle für knappen Bestand (Rollen)",
+          "currency": "Währung"
+        },
+        "data_description": {
+          "low_stock_threshold": "Ein Eintrag gilt als knapp, wenn er höchstens so viele Rollen hat.",
+          "currency": "Wird vom Sensor \"Lagerwert\" verwendet, zum Beispiel EUR."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_spools": { "name": "Rollen gesamt" },
+      "sealed_spools": { "name": "Rollen OVP" },
+      "open_spools": { "name": "Rollen angebrochen" },
+      "total_weight": { "name": "Filament gesamt" },
+      "entry_count": { "name": "Einträge" },
+      "inventory_value": { "name": "Lagerwert" },
+      "low_stock": { "name": "Knapper Bestand" }
+    }
+  },
+  "services": {
+    "add_spools": {
+      "name": "Rollen hinzufügen",
+      "description": "Ändert die Anzahl der OVP-Rollen eines Eintrags.",
+      "fields": {
+        "item_id": {
+          "name": "Eintrags-ID",
+          "description": "ID des Filament-Eintrags, aus der Ansicht \"Verwalten\" kopiert."
+        },
+        "count": {
+          "name": "Anzahl",
+          "description": "Wie viele OVP-Rollen hinzugefügt werden. Negative Werte ziehen Rollen ab."
+        }
+      }
+    },
+    "open_spool": {
+      "name": "Rolle anbrechen",
+      "description": "Macht aus einer OVP-Rolle eine angebrochene Rolle mit 100 % Restmenge.",
+      "fields": {
+        "item_id": {
+          "name": "Eintrags-ID",
+          "description": "ID des Filament-Eintrags, aus der Ansicht \"Verwalten\" kopiert."
+        }
+      }
+    },
+    "set_remaining": {
+      "name": "Restmenge setzen",
+      "description": "Setzt die Restmenge einer angebrochenen Rolle.",
+      "fields": {
+        "item_id": {
+          "name": "Eintrags-ID",
+          "description": "ID des Filament-Eintrags, aus der Ansicht \"Verwalten\" kopiert."
+        },
+        "spool_id": {
+          "name": "Rollen-ID",
+          "description": "ID der angebrochenen Rolle. Leer lassen, um die erste angebrochene Rolle des Eintrags zu verwenden."
+        },
+        "remaining_percent": {
+          "name": "Restmenge in Prozent",
+          "description": "Geschätzte Restmenge in Prozent."
+        },
+        "remaining_grams": {
+          "name": "Restmenge in Gramm",
+          "description": "Restmenge in Gramm, zum Beispiel nach dem Wiegen der Rolle."
+        },
+        "note": { "name": "Notiz", "description": "Optionale Notiz zu dieser Rolle." }
+      }
+    },
+    "consume_spool": {
+      "name": "Rolle aufgebraucht",
+      "description": "Entfernt eine angebrochene Rolle aus dem Bestand.",
+      "fields": {
+        "item_id": {
+          "name": "Eintrags-ID",
+          "description": "ID des Filament-Eintrags, aus der Ansicht \"Verwalten\" kopiert."
+        },
+        "spool_id": {
+          "name": "Rollen-ID",
+          "description": "ID der angebrochenen Rolle. Leer lassen, um die erste angebrochene Rolle des Eintrags zu verwenden."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": { "message": "Der Filament Manager ist nicht geladen." }
+  }
+}

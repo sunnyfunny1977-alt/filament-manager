@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Filament Manager",
+        "description": "This adds the Filament sidebar panel and the overview sensors. Manufacturers and filament types are pre-filled and can be edited in the admin area."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Filament Manager is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Filament Manager options",
+        "data": {
+          "low_stock_threshold": "Low stock threshold (spools)",
+          "currency": "Currency"
+        },
+        "data_description": {
+          "low_stock_threshold": "An entry counts as low on stock when it has this many spools or fewer.",
+          "currency": "Used by the inventory value sensor, for example EUR."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_spools": { "name": "Spools total" },
+      "sealed_spools": { "name": "Sealed spools" },
+      "open_spools": { "name": "Opened spools" },
+      "total_weight": { "name": "Filament total" },
+      "entry_count": { "name": "Entries" },
+      "inventory_value": { "name": "Inventory value" },
+      "low_stock": { "name": "Low stock" }
+    }
+  },
+  "services": {
+    "add_spools": {
+      "name": "Add spools",
+      "description": "Changes the number of sealed spools of an entry.",
+      "fields": {
+        "item_id": {
+          "name": "Entry ID",
+          "description": "ID of the filament entry, copied from the manage view."
+        },
+        "count": {
+          "name": "Number",
+          "description": "How many sealed spools to add. Use a negative value to remove some."
+        }
+      }
+    },
+    "open_spool": {
+      "name": "Open spool",
+      "description": "Turns one sealed spool into an opened spool with 100 % remaining.",
+      "fields": {
+        "item_id": {
+          "name": "Entry ID",
+          "description": "ID of the filament entry, copied from the manage view."
+        }
+      }
+    },
+    "set_remaining": {
+      "name": "Set remaining amount",
+      "description": "Sets the remaining amount of an opened spool.",
+      "fields": {
+        "item_id": {
+          "name": "Entry ID",
+          "description": "ID of the filament entry, copied from the manage view."
+        },
+        "spool_id": {
+          "name": "Spool ID",
+          "description": "ID of the opened spool. Leave empty to use the first opened spool of the entry."
+        },
+        "remaining_percent": {
+          "name": "Remaining in percent",
+          "description": "Estimated remaining amount in percent."
+        },
+        "remaining_grams": {
+          "name": "Remaining in grams",
+          "description": "Remaining amount in grams, for example after weighing the spool."
+        },
+        "note": { "name": "Note", "description": "Optional note for this spool." }
+      }
+    },
+    "consume_spool": {
+      "name": "Spool used up",
+      "description": "Removes an opened spool from the inventory.",
+      "fields": {
+        "item_id": {
+          "name": "Entry ID",
+          "description": "ID of the filament entry, copied from the manage view."
+        },
+        "spool_id": {
+          "name": "Spool ID",
+          "description": "ID of the opened spool. Leave empty to use the first opened spool of the entry."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": { "message": "Filament Manager is not loaded." }
+  }
+}
