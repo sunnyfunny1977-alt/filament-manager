@@ -125,7 +125,7 @@
       "message": "Filament Manager is not loaded."
     },
     "no_empty_weight": {
-      "message": "No empty-spool weight is set for this entry, so a weighed total cannot be converted."
+      "message": "No empty weight is set for this spool type. Add it in the admin area under “Empty weights”."
     }
   }
 }

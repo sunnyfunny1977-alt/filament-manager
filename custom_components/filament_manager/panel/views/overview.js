@@ -18,6 +18,7 @@ import {
   filterAndSort,
   itemGrams,
   itemSpoolCount,
+  itemTare,
   itemTemps,
   spoolGrams,
   spoolPercent,
@@ -99,11 +100,12 @@ function itemCard(item, lookup) {
   const sealed = Number(item.sealed_count || 0);
   const open = item.open_spools || [];
   const temps = itemTemps(item, lookup);
+  const tare = itemTare(item, lookup);
 
   const meta = [
     item.location ? `${t("label.location")}: ${item.location}` : "",
-    item.spool_empty_weight_g !== null && item.spool_empty_weight_g !== undefined
-      ? `${t("label.empty_weight")}: ${fmtNumber(item.spool_empty_weight_g)} g`
+    tare !== null && tare !== undefined
+      ? `${t("label.empty_weight")}: ${fmtNumber(tare)} g`
       : "",
     temps.nozzle !== null ? `${t("label.nozzle")}: ${temps.nozzle} °C` : "",
     temps.bed !== null ? `${t("label.bed")}: ${temps.bed} °C` : "",

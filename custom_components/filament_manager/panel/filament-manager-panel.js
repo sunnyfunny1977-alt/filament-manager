@@ -27,7 +27,9 @@ import {
   materialDialogBody,
   newManufacturerValues,
   newMaterialValues,
+  newSpoolTypeValues,
   renderAdmin,
+  spoolTypeDialogBody,
 } from "./views/admin.js";
 
 const DOMAIN = "filament_manager";
@@ -37,8 +39,9 @@ const DEFAULT_STATIC_BASE = "/filament_manager_static";
 const EMPTY_DATA = {
   manufacturers: [],
   materials: [],
+  spool_types: [],
   items: [],
-  usage: { manufacturers: {}, materials: {} },
+  usage: { manufacturers: {}, materials: {}, spool_types: {} },
   summary: {
     entry_count: 0,
     sealed_spools: 0,
@@ -301,6 +304,9 @@ class FilamentManagerPanel extends HTMLElement {
     } else if (this._dialog.kind === "material") {
       body = materialDialogBody(values);
       actions = dialogActions({ confirmLabel: t("action.save") });
+    } else if (this._dialog.kind === "spool_type") {
+      body = spoolTypeDialogBody(values, this._data);
+      actions = dialogActions({ confirmLabel: t("action.save") });
     } else {
       body = html`<p>${this._dialog.text}</p>`;
       actions = dialogActions({
@@ -426,6 +432,16 @@ class FilamentManagerPanel extends HTMLElement {
     if (!target || !target.dataset) return;
     if (this._applyFilter(target)) return;
     if (this._captureDialogField(target)) return;
+    // Inline editing of the empty weight in the admin list.
+    const spoolTypeRow = target.closest("[data-spool-type]");
+    if (spoolTypeRow && target.dataset.field === "empty_weight_g") {
+      this._call({
+        type: `${DOMAIN}/spool_type/update`,
+        spool_type_id: spoolTypeRow.dataset.spoolType,
+        empty_weight_g: target.value === "" ? null : target.value,
+      }).catch(() => {});
+      return;
+    }
     // Inline editing of an opened spool in the manage view.
     const editor = target.closest(".spool-edit");
     if (editor && target.dataset.field) {
@@ -505,7 +521,6 @@ class FilamentManagerPanel extends HTMLElement {
             color_hex: item.color_hex,
             diameter: item.diameter,
             spool_net_weight_g: item.spool_net_weight_g,
-            spool_empty_weight_g: item.spool_empty_weight_g ?? "",
             sealed_count: item.sealed_count,
             location: item.location,
             price: item.price ?? "",
@@ -677,6 +692,35 @@ class FilamentManagerPanel extends HTMLElement {
         });
       },
 
+      "new-spool-type": () =>
+        this._openDialog({
+          kind: "spool_type",
+          mode: "new",
+          title: t("dialog.spool_type.new"),
+          values: newSpoolTypeValues(this._data),
+        }),
+
+      "delete-spool-type": (dataset) => {
+        const entry = (this._data.spool_types || []).find((one) => one.id === dataset.id);
+        if (!entry) return;
+        const used = (this._data.usage.spool_types || {})[entry.id] || 0;
+        const name = `${this._lookup.manufacturerName(entry.manufacturer_id)} ${this._lookup.materialName(
+          entry.material_id
+        )} ${entry.net_weight_g} g`;
+        if (used > 0) {
+          this._toast(this._blockedMessage(name, used), true);
+          return;
+        }
+        this._confirm({
+          title: t("admin.delete_spool_type_title"),
+          text: t("admin.delete_text", { name }),
+          onConfirm: async () => {
+            await this._call({ type: `${DOMAIN}/spool_type/delete`, spool_type_id: entry.id });
+            this._toast(t("toast.deleted"));
+          },
+        });
+      },
+
       // ---- dialog ----
       "dialog-backdrop": () => this._closeDialog(),
       "dialog-cancel": () => this._closeDialog(),
@@ -695,7 +739,7 @@ class FilamentManagerPanel extends HTMLElement {
       return;
     }
 
-    if (kind === "item") {
+    if (kind === "item" || kind === "spool_type") {
       if (!values.manufacturer_id || !values.material_id) {
         this._setDialogError(t("error.item_required"));
         return;
@@ -705,7 +749,12 @@ class FilamentManagerPanel extends HTMLElement {
       return;
     }
 
-    const target = { item: "item", manufacturer: "manufacturer", material: "material" }[kind];
+    const target = {
+      item: "item",
+      manufacturer: "manufacturer",
+      material: "material",
+      spool_type: "spool_type",
+    }[kind];
     const message = {
       type: `${DOMAIN}/${target}/${mode === "edit" ? "update" : "create"}`,
       ...this._cleanValues(values),

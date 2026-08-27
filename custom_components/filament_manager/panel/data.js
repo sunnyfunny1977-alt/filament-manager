@@ -9,14 +9,47 @@
 export function createLookup(data) {
   const manufacturers = new Map((data.manufacturers || []).map((entry) => [entry.id, entry]));
   const materials = new Map((data.materials || []).map((entry) => [entry.id, entry]));
+  const spoolTypes = new Map(
+    (data.spool_types || []).map((entry) => [spoolTypeKey(entry, "net_weight_g"), entry])
+  );
 
   return {
     manufacturers,
     materials,
+    spoolTypes,
     manufacturerName: (id) => manufacturers.get(id)?.name || "?",
     materialName: (id) => materials.get(id)?.name || "?",
     material: (id) => materials.get(id) || null,
+    spoolTypeFor: (item) => spoolTypes.get(spoolTypeKey(item, "spool_net_weight_g")) || null,
   };
+}
+
+/** Business key of a spool type: manufacturer + material + size in whole grams. */
+export function spoolTypeKey(record, netField) {
+  return [
+    record.manufacturer_id,
+    record.material_id,
+    Math.round(Number(record[netField]) || 0),
+  ].join("|");
+}
+
+/**
+ * The empty-spool weight that applies to an item.
+ *
+ * The backend already resolves it into `tare_g`; the lookup is only the
+ * fallback for fixtures that do not carry it.
+ */
+export function itemTare(item, lookup) {
+  if (item.tare_g !== undefined) return item.tare_g;
+  const spoolType = lookup && lookup.spoolTypeFor ? lookup.spoolTypeFor(item) : null;
+  return spoolType ? spoolType.empty_weight_g : null;
+}
+
+/** A readable name for a spool type, e.g. "Anycubic Silk PLA 1000 g". */
+export function spoolTypeLabel(spoolType, lookup) {
+  return `${lookup.manufacturerName(spoolType.manufacturer_id)} ${lookup.materialName(
+    spoolType.material_id
+  )}`;
 }
 
 /** "Sunlu PETG Black" — the human readable name of an entry. */

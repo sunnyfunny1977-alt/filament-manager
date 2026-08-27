@@ -1,38 +1,32 @@
 {
   "app.title": "Filament Manager",
   "app.loading": "Wird geladen …",
-
   "tab.overview": "Übersicht",
   "tab.manage": "Verwalten",
   "tab.admin": "Admin",
-
   "action.save": "Speichern",
   "action.cancel": "Abbrechen",
   "action.delete": "Löschen",
   "action.edit": "Bearbeiten",
-
   "toast.saved": "Gespeichert",
   "toast.deleted": "Gelöscht",
   "toast.id_copied": "ID kopiert",
-
   "error.generic": "Fehler: {message}",
   "error.in_use": "Wird noch verwendet und kann daher nicht gelöscht werden.",
   "error.not_found": "Der Datensatz wurde nicht gefunden.",
   "error.no_sealed_spools": "Es ist keine OVP-Rolle mehr vorhanden.",
-  "error.no_empty_weight": "Für diesen Eintrag ist kein Leergewicht hinterlegt. Trage es beim Eintrag nach, dann lässt sich aus dem Wiegewert die Restmenge berechnen.",
+  "error.no_empty_weight": "Für diese Rollensorte ist kein Leergewicht hinterlegt. Trage es im Admin-Bereich unter „Leergewichte“ nach.",
   "error.invalid_data": "Bitte alle Pflichtfelder ausfüllen.",
   "error.not_loaded": "Der Filament Manager ist nicht geladen.",
   "error.unauthorized": "Dafür werden Administratorrechte benötigt.",
   "error.name_required": "Bitte einen Namen eingeben.",
   "error.item_required": "Bitte Hersteller und Sorte auswählen.",
-
   "stat.total_spools": "Rollen gesamt",
   "stat.sealed": "davon OVP",
   "stat.open": "davon angebrochen",
   "stat.weight": "Filament",
   "stat.value": "Lagerwert",
   "stat.entries": "Einträge",
-
   "filter.search": "Suchen",
   "filter.search_placeholder": "Hersteller, Sorte, Farbe, Lagerort …",
   "filter.manufacturer": "Hersteller",
@@ -40,16 +34,13 @@
   "filter.condition": "Zustand",
   "filter.sort": "Sortierung",
   "filter.all": "Alle",
-
   "condition.sealed_only": "Nur OVP",
   "condition.open_only": "Nur angebrochen",
-
   "sort.manufacturer": "Hersteller",
   "sort.material": "Sorte",
   "sort.color": "Farbe",
   "sort.remaining": "Restmenge",
   "sort.updated": "Zuletzt geändert",
-
   "label.sealed": "{count} × OVP",
   "label.open_spools": "{count} × angebrochen",
   "label.no_stock": "Kein Bestand",
@@ -61,14 +52,12 @@
   "label.empty_weight": "Leergewicht",
   "label.opened_at": "Angebrochen am",
   "label.spool_index": "Rolle {index}",
-
   "overview.empty.title": "Noch kein Filament erfasst",
   "overview.empty.text": "Lege deinen ersten Eintrag im Bereich Verwalten an.",
   "overview.empty.action": "Zum Bereich Verwalten",
   "overview.no_match.title": "Keine Treffer",
   "overview.no_match.text": "Für die gewählten Filter gibt es keine Einträge.",
   "overview.no_match.action": "Filter zurücksetzen",
-
   "manage.title": "Bestand verwalten",
   "manage.new_item": "Neuer Eintrag",
   "manage.sealed_count": "OVP-Rollen",
@@ -85,10 +74,8 @@
   "manage.delete_text": "{name} wird mit allen angebrochenen Rollen entfernt. Das lässt sich nicht rückgängig machen.",
   "manage.consume_title": "Rolle als aufgebraucht markieren?",
   "manage.consume_text": "Die angebrochene Rolle von {name} wird aus dem Bestand entfernt.",
-
   "dialog.item.new": "Neuer Filament-Eintrag",
   "dialog.item.edit": "Eintrag bearbeiten",
-
   "field.manufacturer": "Hersteller",
   "field.material": "Filament-Sorte",
   "field.color_name": "Farbe",
@@ -115,10 +102,9 @@
   "field.optional": "optional",
   "field.temp_hint": "Leer lassen, um den Standard der Sorte zu verwenden.",
   "field.remaining_hint": "Prozent und Gramm sind unabhängig voneinander — trage ein, was du weißt.",
-  "field.empty_weight_hint": "Gewicht der leeren Spule. Damit wird aus dem Wiegen die Restmenge berechnet.",
+  "field.empty_weight_hint": "Gewicht der leeren Spule. Gilt für alle Farben dieser Rollensorte.",
   "field.gross_weight_hint": "Komplette Rolle wiegen und den Wert hier eintragen — die Restmenge in Gramm ergibt sich daraus.",
-  "field.gross_weight_disabled": "Trage beim Eintrag das Leergewicht der Rolle nach, dann kannst du hier den Wiegewert eingeben.",
-
+  "field.gross_weight_disabled": "Hinterlege das Leergewicht im Admin-Bereich unter „Leergewichte“, dann kannst du hier den Wiegewert eingeben.",
   "admin.title": "Stammdaten",
   "admin.manufacturers": "Hersteller",
   "admin.materials": "Filament-Sorten",
@@ -138,11 +124,19 @@
   "admin.no_temps": "Keine Standardtemperaturen hinterlegt",
   "admin.only_admin.title": "Nur für Administratoren",
   "admin.only_admin.text": "Stammdaten können nur von Administratoren geändert werden.",
-
   "dialog.manufacturer.new": "Neuer Hersteller",
   "dialog.manufacturer.edit": "Hersteller bearbeiten",
   "dialog.material.new": "Neue Filament-Sorte",
   "dialog.material.edit": "Filament-Sorte bearbeiten",
-
-  "readonly.notice": "Du kannst den Bestand ansehen, aber nicht ändern — dafür werden Administratorrechte benötigt."
+  "readonly.notice": "Du kannst den Bestand ansehen, aber nicht ändern — dafür werden Administratorrechte benötigt.",
+  "admin.spool_types": "Leergewichte",
+  "admin.spool_types_hint": "Das Leergewicht der leeren Spule gilt für alle Farben einer Rollensorte. Eine Zeile entsteht automatisch, sobald du einen Eintrag mit dieser Kombination anlegst. Änderst du einen Wert, ziehen bereits gewogene Rollen automatisch nach.",
+  "admin.new_spool_type": "Neue Kombination",
+  "admin.no_spool_types": "Noch keine Kombination vorhanden — lege zuerst einen Filament-Eintrag an.",
+  "admin.tare_missing": "Kein Leergewicht — Wiegen ist für diese Rollen gesperrt",
+  "admin.tare_set": "Leergewicht hinterlegt — Wiegen möglich",
+  "admin.delete_spool_type_title": "Kombination löschen?",
+  "dialog.spool_type.new": "Neue Kombination",
+  "field.empty_weight_short": "Leergewicht (g)",
+  "error.duplicate": "Diese Kombination gibt es bereits."
 }

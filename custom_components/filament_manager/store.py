@@ -10,6 +10,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
 from .const import (
+    ERR_DUPLICATE,
     ERR_IN_USE,
     ERR_INVALID,
     ERR_NO_EMPTY_WEIGHT,
@@ -24,6 +25,7 @@ from .models import (
     Manufacturer,
     Material,
     OpenSpool,
+    SpoolType,
     default_data,
     item_total_grams,
     item_total_spools,
@@ -32,13 +34,83 @@ from .models import (
     normalize_manufacturer,
     normalize_material,
     normalize_open_spool,
+    normalize_spool_type,
     spool_remaining_grams,
+    spool_type_key,
     utcnow_iso,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 SAVE_DELAY = 2
+
+
+def migrate_v1_to_v2(old_data: dict[str, Any]) -> dict[str, Any]:
+    """Move the empty-spool weight from the items into the new spool types.
+
+    Before version 2 every item carried its own tare, which meant the same
+    value had to be typed in once per colour. It now lives on the spool type
+    (manufacturer + material + size), so one entry covers every colour.
+    """
+    items = [dict(entry) for entry in old_data.get("items", []) if isinstance(entry, dict)]
+    spool_types: list[dict[str, Any]] = []
+    by_key: dict[tuple, dict[str, Any]] = {}
+
+    for item in items:
+        key = spool_type_key(
+            item.get("manufacturer_id"),
+            item.get("material_id"),
+            item.get("spool_net_weight_g"),
+        )
+        record = by_key.get(key)
+        if record is None:
+            record = normalize_spool_type(
+                {
+                    "manufacturer_id": item.get("manufacturer_id"),
+                    "material_id": item.get("material_id"),
+                    "net_weight_g": item.get("spool_net_weight_g"),
+                    "empty_weight_g": None,
+                }
+            )
+            by_key[key] = record
+            spool_types.append(record)
+
+        tare = item.pop("spool_empty_weight_g", None)
+        if tare is not None:
+            if record["empty_weight_g"] is None:
+                record["empty_weight_g"] = float(tare)
+            elif float(tare) != record["empty_weight_g"]:
+                _LOGGER.warning(
+                    "Spool type %s had conflicting empty weights (%s and %s), keeping %s",
+                    key,
+                    record["empty_weight_g"],
+                    tare,
+                    record["empty_weight_g"],
+                )
+
+        for spool in item.get("open_spools", []):
+            if isinstance(spool, dict):
+                # Nothing was weighed before version 2, so no reading to carry over.
+                spool.setdefault("gross_weight_g", None)
+
+    return {
+        "manufacturers": old_data.get("manufacturers", []),
+        "materials": old_data.get("materials", []),
+        "spool_types": spool_types,
+        "items": items,
+    }
+
+
+class FilamentManagerStore(Store[dict[str, Any]]):
+    """Storage helper that knows how to bring older data forward."""
+
+    async def _async_migrate_func(
+        self, old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Migrate stored data to the current version."""
+        if old_major_version < 2:
+            old_data = migrate_v1_to_v2(old_data)
+        return old_data
 
 
 class FilamentError(Exception):
@@ -62,8 +134,15 @@ class FilamentStore:
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialise the store."""
         self.hass = hass
-        self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
-        self._data: dict[str, Any] = {"manufacturers": [], "materials": [], "items": []}
+        self._store: Store[dict[str, Any]] = FilamentManagerStore(
+            hass, STORAGE_VERSION, STORAGE_KEY
+        )
+        self._data: dict[str, Any] = {
+            "manufacturers": [],
+            "materials": [],
+            "spool_types": [],
+            "items": [],
+        }
 
     # ------------------------------------------------------------------
     # Loading and saving
@@ -89,12 +168,18 @@ class FilamentStore:
                 for entry in stored.get("materials", [])
                 if isinstance(entry, dict)
             ],
+            "spool_types": [
+                normalize_spool_type(entry)
+                for entry in stored.get("spool_types", [])
+                if isinstance(entry, dict)
+            ],
             "items": [
                 normalize_item(entry)
                 for entry in stored.get("items", [])
                 if isinstance(entry, dict)
             ],
         }
+        self._backfill_spool_types()
 
     @callback
     def _save_and_notify(self) -> None:
@@ -209,6 +294,134 @@ class FilamentStore:
         self._save_and_notify()
 
     # ------------------------------------------------------------------
+    # Spool types (the bare spool behind a group of items)
+    # ------------------------------------------------------------------
+
+    @property
+    def spool_types(self) -> list[SpoolType]:
+        """Return all spool types sorted for display."""
+        manufacturers = {e["id"]: e["name"] for e in self._data["manufacturers"]}
+        materials = {e["id"]: e["name"] for e in self._data["materials"]}
+        return sorted(
+            self._data["spool_types"],
+            key=lambda entry: (
+                manufacturers.get(entry["manufacturer_id"], "").lower(),
+                materials.get(entry["material_id"], "").lower(),
+                entry.get("net_weight_g", 0),
+            ),
+        )
+
+    @staticmethod
+    def _key_of(record: dict[str, Any], net_field: str) -> tuple:
+        """Return the spool-type key of an item or a spool type."""
+        return spool_type_key(
+            record.get("manufacturer_id"),
+            record.get("material_id"),
+            record.get(net_field),
+        )
+
+    def _find_spool_type(self, key: tuple) -> SpoolType | None:
+        """Return the spool type for a business key, if it exists."""
+        for entry in self._data["spool_types"]:
+            if self._key_of(entry, "net_weight_g") == key:
+                return entry
+        return None
+
+    def spool_type_for(self, item: Item) -> SpoolType | None:
+        """Return the spool type an item belongs to."""
+        return self._find_spool_type(self._key_of(item, "spool_net_weight_g"))
+
+    def item_tare(self, item: Item) -> float | None:
+        """Return the empty-spool weight that applies to an item."""
+        spool_type = self.spool_type_for(item)
+        return None if spool_type is None else spool_type.get("empty_weight_g")
+
+    def _ensure_spool_type(self, item: Item) -> SpoolType:
+        """Create the spool type of an item if this combination is new."""
+        key = self._key_of(item, "spool_net_weight_g")
+        existing = self._find_spool_type(key)
+        if existing is not None:
+            return existing
+        record = normalize_spool_type(
+            {
+                "manufacturer_id": item["manufacturer_id"],
+                "material_id": item["material_id"],
+                "net_weight_g": item["spool_net_weight_g"],
+                "empty_weight_g": None,
+            }
+        )
+        self._data["spool_types"].append(record)
+        return record
+
+    def _backfill_spool_types(self) -> None:
+        """Make sure every stored combination has a spool type."""
+        for item in self._data["items"]:
+            self._ensure_spool_type(item)
+
+    def _spool_type_usage(self, spool_type: SpoolType) -> int:
+        """Return how many items belong to a spool type."""
+        key = self._key_of(spool_type, "net_weight_g")
+        return sum(
+            1
+            for item in self._data["items"]
+            if self._key_of(item, "spool_net_weight_g") == key
+        )
+
+    def add_spool_type(self, raw: dict[str, Any]) -> SpoolType:
+        """Create a spool type by hand, for a combination not yet in stock."""
+        record = normalize_spool_type({**raw, "id": None})
+        self._find("manufacturers", record["manufacturer_id"])
+        self._find("materials", record["material_id"])
+        if self._find_spool_type(self._key_of(record, "net_weight_g")) is not None:
+            raise FilamentError(ERR_DUPLICATE, collection="spool_types")
+        self._data["spool_types"].append(record)
+        self._save_and_notify()
+        return record
+
+    def update_spool_type(self, record_id: str, raw: dict[str, Any]) -> SpoolType:
+        """Set the empty-spool weight and pull weighed spools along.
+
+        Every opened spool that was actually weighed keeps its reading, so the
+        remaining amount is recomputed against the corrected tare. Amounts that
+        were typed in by hand carry no reading and stay untouched.
+        """
+        existing = self._find("spool_types", record_id)
+        record = normalize_spool_type({**raw, "id": record_id}, existing)
+        existing.update(record)
+        self._recompute_weighed_spools(existing)
+        self._save_and_notify()
+        return existing
+
+    def delete_spool_type(self, record_id: str) -> None:
+        """Delete a spool type that no item belongs to."""
+        existing = self._find("spool_types", record_id)
+        if used := self._spool_type_usage(existing):
+            raise FilamentError(ERR_IN_USE, count=used)
+        self._data["spool_types"] = [
+            entry for entry in self._data["spool_types"] if entry["id"] != record_id
+        ]
+        self._save_and_notify()
+
+    def _recompute_weighed_spools(self, spool_type: SpoolType) -> None:
+        """Recompute the remaining grams of every weighed spool of a type."""
+        tare = spool_type.get("empty_weight_g")
+        if tare is None:
+            return
+        key = self._key_of(spool_type, "net_weight_g")
+        for item in self._data["items"]:
+            if self._key_of(item, "spool_net_weight_g") != key:
+                continue
+            touched = False
+            for spool in item.get("open_spools", []):
+                gross = spool.get("gross_weight_g")
+                if gross is None:
+                    continue
+                spool["remaining_grams"] = net_from_gross(float(gross), float(tare))
+                touched = True
+            if touched:
+                item["updated_at"] = utcnow_iso()
+
+    # ------------------------------------------------------------------
     # Items
     # ------------------------------------------------------------------
 
@@ -216,6 +429,7 @@ class FilamentStore:
         """Create an inventory item."""
         record = normalize_item({**raw, "id": None})
         self._validate_references(record)
+        self._ensure_spool_type(record)
         self._data["items"].append(record)
         self._save_and_notify()
         return record
@@ -230,6 +444,7 @@ class FilamentStore:
         payload = {key: value for key, value in raw.items() if key != "open_spools"}
         record = normalize_item({**payload, "id": record_id}, existing)
         self._validate_references(record)
+        self._ensure_spool_type(record)
         existing.update(record)
         self._save_and_notify()
         return existing
@@ -265,7 +480,8 @@ class FilamentStore:
         if int(existing.get("sealed_count", 0)) < 1:
             raise FilamentError(ERR_NO_SEALED_SPOOLS)
         existing["sealed_count"] = int(existing["sealed_count"]) - 1
-        spool = normalize_open_spool({"remaining_percent": 100, **(raw or {}), "id": None})
+        payload = self._apply_gross_weight(existing, dict(raw or {}))
+        spool = normalize_open_spool({"remaining_percent": 100, **payload, "id": None})
         existing["open_spools"].append(spool)
         existing["updated_at"] = utcnow_iso()
         self._save_and_notify()
@@ -291,16 +507,28 @@ class FilamentStore:
         raise FilamentError(ERR_NOT_FOUND, collection="open_spools", id=spool_id)
 
     def _apply_gross_weight(self, item: Item, raw: dict[str, Any]) -> dict[str, Any]:
-        """Turn a weighed gross value into remaining grams, if one was sent."""
-        if raw.get("gross_weight_g") in (None, ""):
-            return {key: value for key, value in raw.items() if key != "gross_weight_g"}
+        """Resolve a weighed reading against the tare of the item's spool type.
 
-        empty = item.get("spool_empty_weight_g")
-        if empty is None:
+        The reading is kept so a later correction of the empty-spool weight can
+        recompute the remaining amount. Typing a remaining amount by hand drops
+        the reading again, because that number no longer came from a scale.
+        """
+        payload = dict(raw)
+        gross = payload.get("gross_weight_g")
+
+        if gross in (None, ""):
+            if "remaining_grams" in payload:
+                payload["gross_weight_g"] = None
+            else:
+                payload.pop("gross_weight_g", None)
+            return payload
+
+        tare = self.item_tare(item)
+        if tare is None:
             raise FilamentError(ERR_NO_EMPTY_WEIGHT, item_id=item["id"])
 
-        payload = {key: value for key, value in raw.items() if key != "gross_weight_g"}
-        payload["remaining_grams"] = net_from_gross(float(raw["gross_weight_g"]), float(empty))
+        payload["gross_weight_g"] = float(gross)
+        payload["remaining_grams"] = net_from_gross(float(gross), float(tare))
         return payload
 
     def consume_spool(self, item_id: str, spool_id: str) -> None:
@@ -320,11 +548,17 @@ class FilamentStore:
     # ------------------------------------------------------------------
 
     def snapshot(self) -> dict[str, Any]:
-        """Return the full state the panel renders from."""
+        """Return the full state the panel renders from.
+
+        Items are sent with their tare already resolved, so the panel never has
+        to rebuild the spool-type key itself and cannot disagree with the
+        backend about which spool type an item belongs to.
+        """
         return {
             "manufacturers": self.manufacturers,
             "materials": self.materials,
-            "items": self.items,
+            "spool_types": self.spool_types,
+            "items": [{**item, "tare_g": self.item_tare(item)} for item in self.items],
             "usage": {
                 "manufacturers": {
                     entry["id"]: self._usage_count("manufacturer_id", entry["id"])
@@ -333,6 +567,10 @@ class FilamentStore:
                 "materials": {
                     entry["id"]: self._usage_count("material_id", entry["id"])
                     for entry in self._data["materials"]
+                },
+                "spool_types": {
+                    entry["id"]: self._spool_type_usage(entry)
+                    for entry in self._data["spool_types"]
                 },
             },
             "summary": self.summary(),

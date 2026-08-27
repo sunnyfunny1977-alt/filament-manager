@@ -32,7 +32,6 @@ ITEM_FIELDS = {
     vol.Optional("color_hex"): vol.Any(str, None),
     vol.Optional("diameter"): vol.Any(float, int, str, None),
     vol.Optional("spool_net_weight_g"): vol.Any(float, int, str, None),
-    vol.Optional("spool_empty_weight_g"): vol.Any(float, int, str, None),
     vol.Optional("sealed_count"): vol.Any(int, str, None),
     vol.Optional("location"): vol.Any(str, None),
     vol.Optional("notes"): vol.Any(str, None),
@@ -54,6 +53,13 @@ MATERIAL_FIELDS = {
     vol.Optional("bed_temp"): vol.Any(int, str, None),
     vol.Optional("density"): vol.Any(float, int, str, None),
     vol.Optional("sort_order"): vol.Any(int, str, None),
+}
+
+SPOOL_TYPE_FIELDS = {
+    vol.Optional("manufacturer_id"): str,
+    vol.Optional("material_id"): str,
+    vol.Optional("net_weight_g"): vol.Any(float, int, str, None),
+    vol.Optional("empty_weight_g"): vol.Any(float, int, str, None),
 }
 
 SPOOL_FIELDS = {
@@ -89,6 +95,9 @@ def async_register_commands(hass: HomeAssistant) -> None:
         handle_material_create,
         handle_material_update,
         handle_material_delete,
+        handle_spool_type_create,
+        handle_spool_type_update,
+        handle_spool_type_delete,
         handle_item_create,
         handle_item_update,
         handle_item_delete,
@@ -272,6 +281,71 @@ def handle_material_delete(
 ) -> None:
     """Delete a filament type that is not in use."""
     _answer(hass, connection, msg, lambda store: store.delete_material(msg["material_id"]))
+
+
+# ----------------------------------------------------------------------
+# Spool types (admin area)
+# ----------------------------------------------------------------------
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): f"{DOMAIN}/spool_type/create", **SPOOL_TYPE_FIELDS}
+)
+@websocket_api.require_admin
+@callback
+def handle_spool_type_create(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Create a spool type for a combination that is not in stock yet."""
+    _answer(
+        hass,
+        connection,
+        msg,
+        lambda store: store.add_spool_type(_payload(msg, SPOOL_TYPE_FIELDS)),
+    )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/spool_type/update",
+        vol.Required("spool_type_id"): str,
+        **SPOOL_TYPE_FIELDS,
+    }
+)
+@websocket_api.require_admin
+@callback
+def handle_spool_type_update(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Set the empty-spool weight; weighed spools are recomputed."""
+    _answer(
+        hass,
+        connection,
+        msg,
+        lambda store: store.update_spool_type(
+            msg["spool_type_id"], _payload(msg, SPOOL_TYPE_FIELDS)
+        ),
+    )
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): f"{DOMAIN}/spool_type/delete", vol.Required("spool_type_id"): str}
+)
+@websocket_api.require_admin
+@callback
+def handle_spool_type_delete(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Delete a spool type that no item belongs to."""
+    _answer(
+        hass, connection, msg, lambda store: store.delete_spool_type(msg["spool_type_id"])
+    )
 
 
 # ----------------------------------------------------------------------

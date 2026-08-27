@@ -1,9 +1,13 @@
 """Data model helpers for the Filament Manager.
 
-The store keeps three flat lists: manufacturers, materials and items. An *item*
-is one combination of manufacturer + material + colour. It carries the number of
-sealed (unopened) spools plus a list of opened spools, each with its own
-remaining amount.
+The store keeps four flat lists: manufacturers, materials, spool types and items.
+An *item* is one combination of manufacturer + material + colour. It carries the
+number of sealed (unopened) spools plus a list of opened spools, each with its
+own remaining amount.
+
+A *spool type* is the physical spool behind an item — manufacturer + material +
+size. It holds the weight of the bare spool, because that is a property of the
+spool and not of the colour wound onto it.
 """
 
 from __future__ import annotations
@@ -42,12 +46,30 @@ class Material(TypedDict):
     sort_order: int
 
 
+class SpoolType(TypedDict):
+    """The bare spool behind a group of items.
+
+    Identified by manufacturer + material + size: a 250 g spool weighs less
+    empty than a 1 kg one, even for the same filament.
+    """
+
+    id: str
+    manufacturer_id: str
+    material_id: str
+    net_weight_g: float
+    empty_weight_g: float | None
+    created_at: str
+
+
 class OpenSpool(TypedDict):
     """A single opened spool with its own remaining amount."""
 
     id: str
     remaining_percent: float | None
     remaining_grams: float | None
+    # What the scale last read for the whole spool. Kept so a corrected
+    # empty-spool weight can recompute the remaining amount.
+    gross_weight_g: float | None
     opened_at: str | None
     note: str
 
@@ -62,7 +84,6 @@ class Item(TypedDict):
     color_hex: str
     diameter: float
     spool_net_weight_g: float
-    spool_empty_weight_g: float | None
     sealed_count: int
     open_spools: list[OpenSpool]
     location: str
@@ -171,6 +192,32 @@ def normalize_material(
     }
 
 
+def spool_type_key(manufacturer_id: Any, material_id: Any, net_weight_g: Any) -> tuple:
+    """Return the business key of a spool type.
+
+    The size is rounded to whole grams so 1000 and 1000.0 are the same spool.
+    """
+    net = _opt_number(net_weight_g, 1, 100000) or DEFAULT_SPOOL_NET_WEIGHT_G
+    return (_str(manufacturer_id), _str(material_id), int(round(net)))
+
+
+def normalize_spool_type(
+    raw: dict[str, Any], existing: SpoolType | None = None
+) -> SpoolType:
+    """Build a valid spool-type record from user input."""
+    base: dict[str, Any] = dict(existing or {})
+    base.update(raw)
+    return {
+        "id": base.get("id") or new_id(),
+        "manufacturer_id": _str(base.get("manufacturer_id")),
+        "material_id": _str(base.get("material_id")),
+        "net_weight_g": _opt_number(base.get("net_weight_g"), 1, 100000)
+        or DEFAULT_SPOOL_NET_WEIGHT_G,
+        "empty_weight_g": _opt_number(base.get("empty_weight_g"), 0, 100000),
+        "created_at": _str(base.get("created_at")) or utcnow_iso(),
+    }
+
+
 def normalize_open_spool(
     raw: dict[str, Any], existing: OpenSpool | None = None
 ) -> OpenSpool:
@@ -185,6 +232,7 @@ def normalize_open_spool(
         "id": base.get("id") or new_id(),
         "remaining_percent": _opt_number(base.get("remaining_percent"), 0, 100),
         "remaining_grams": _opt_number(base.get("remaining_grams"), 0, 100000),
+        "gross_weight_g": _opt_number(base.get("gross_weight_g"), 0, 100000),
         "opened_at": _opt_date(base.get("opened_at")) or dt_util.now().date().isoformat(),
         "note": _str(base.get("note")),
     }
@@ -209,7 +257,6 @@ def normalize_item(raw: dict[str, Any], existing: Item | None = None) -> Item:
         "diameter": _opt_number(base.get("diameter"), 0.5, 5) or DEFAULT_DIAMETER,
         "spool_net_weight_g": _opt_number(base.get("spool_net_weight_g"), 1, 100000)
         or DEFAULT_SPOOL_NET_WEIGHT_G,
-        "spool_empty_weight_g": _opt_number(base.get("spool_empty_weight_g"), 0, 100000),
         "sealed_count": _opt_int(base.get("sealed_count"), 0, 9999) or 0,
         "open_spools": open_spools,
         "location": _str(base.get("location")),
@@ -271,5 +318,6 @@ def default_data() -> dict[str, Any]:
             normalize_material({**entry, "sort_order": index})
             for index, entry in enumerate(DEFAULT_MATERIALS)
         ],
+        "spool_types": [],
         "items": [],
     }

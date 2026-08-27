@@ -10,7 +10,7 @@ Seitenleisten-Panel, ohne YAML-Gefrickel.
 - **Übersicht** – Standardansicht mit allen Rollen, Farbpunkt, Restmengen und Summen
 - **Verwalten** – Bestand pflegen: Einträge anlegen, OVP-Rollen zählen, Rollen anbrechen,
   Restmengen eintragen, aufgebrauchte Rollen entfernen
-- **Admin** – Hersteller und Filament-Sorten pflegen (nur für HA-Administratoren)
+- **Admin** – Hersteller, Filament-Sorten und Leergewichte pflegen (nur für HA-Administratoren)
 - **Sensoren** – Rollenzahl, Gesamtgewicht, Lagerwert und knapper Bestand für Automationen
 - **Services** – Bestand per Automation ändern, z. B. über einen NFC-Tag an der Rolle
 
@@ -29,7 +29,6 @@ Ein **Eintrag** ist eine Kombination aus Hersteller + Sorte + Farbe. Darin steck
 | Angebrochene Rollen | Liste – jede Rolle mit eigener Restmenge |
 | Durchmesser | 1,75 / 2,85 / 3,0 mm |
 | Filament pro Rolle | Nettogewicht in Gramm, z. B. 1000 g |
-| Leergewicht der Rolle | Gewicht der leeren Spule (Tara), z. B. 218 g – optional |
 | Lagerort, Notizen | Freitext |
 | Preis, Kaufdatum | Grundlage für den Lagerwert |
 | Düsen-/Betttemperatur | leer = Standard der Filament-Sorte |
@@ -37,17 +36,36 @@ Ein **Eintrag** ist eine Kombination aus Hersteller + Sorte + Farbe. Darin steck
 **Restmenge:** Prozent und Gramm sind zwei unabhängige Felder. Trage ein, was du weißt –
 geschätzte Prozent, gewogene Gramm oder beides. Nichts wird automatisch umgerechnet.
 
-**Restmenge durch Wiegen:** Ist beim Eintrag ein **Leergewicht** hinterlegt, erscheint bei jeder
-angebrochenen Rolle das Feld **Gewogen (g)**. Rolle auf die Waage legen, den angezeigten Wert
-eintragen – das Leergewicht wird abgezogen und die Restmenge in Gramm gesetzt:
+### Leergewichte und Wiegen
+
+Das Gewicht der leeren Spule ist keine Eigenschaft einer Farbe, sondern der **Rollensorte**. Es
+lebt deshalb im Admin-Bereich unter **Leergewichte**, mit einer Zeile je Kombination aus
+**Hersteller + Sorte + Rollengröße**:
+
+| Kombination | Leergewicht |
+|---|---|
+| Anycubic PLA · 1000 g | 130,8 g |
+| Cailab PLA+ · 250 g | – |
+
+- Eine Zeile **entsteht automatisch**, sobald du einen Eintrag mit dieser Kombination anlegst
+- Jeder weitere Eintrag derselben Kombination übernimmt den Wert von selbst
+- Die Rollengröße gehört zum Schlüssel, weil eine 250-g-Spule leer weniger wiegt als eine 1-kg-Spule
+
+Ist ein Leergewicht hinterlegt, erscheint bei jeder angebrochenen Rolle im Bereich **Verwalten**
+das Feld **Gewogen (g)**. Rolle auf die Waage, Wert eintragen:
 
 ```
 Rest = Wiegewert − Leergewicht      z. B. 738 g − 218 g = 520 g
 ```
 
-Der Wiegewert selbst wird nicht gespeichert, er ist reine Eingabehilfe. Die Prozentangabe bleibt
-unangetastet. Ohne hinterlegtes Leergewicht ist das Feld gesperrt, und ein Wiegewert über den
-Service wird mit einer Meldung abgelehnt statt still falsch verrechnet.
+**Korrigierst du das Leergewicht später, ziehen bereits gewogene Rollen automatisch nach** – der
+Wiegewert bleibt gespeichert und wird neu verrechnet (bei 230 g Tara werden aus denselben 738 g
+dann 508 g). Eine von Hand eingetragene Restmenge bleibt dabei unangetastet, denn sie kam nicht
+von der Waage.
+
+Die Prozentangabe wird nie automatisch verändert. Ohne hinterlegtes Leergewicht ist das Wiegefeld
+gesperrt, und ein Wiegewert über den Service wird mit einer Meldung abgelehnt statt still falsch
+verrechnet.
 
 Für die Sensoren wird ein Gesamtgewicht gebraucht, dafür gilt diese Reihenfolge:
 
@@ -194,8 +212,9 @@ schreibenden Websocket-Befehle lehnen Nicht-Administratoren grundsätzlich ab.
 
 ## Daten und Backup
 
-Alles liegt in einer Datei: `/config/.storage/filament_manager`. Sie ist Teil jedes
-Home-Assistant-Backups. Wird die Integration entfernt, bleibt die Datei erhalten – nach
+Alles liegt in einer Datei: `/config/.storage/filament_manager` (Speicherversion 2). Sie ist
+Teil jedes Home-Assistant-Backups. Ältere Stände werden beim Start automatisch migriert: ein
+Leergewicht, das früher am einzelnen Eintrag hing, wandert dabei in die passende Kombination. Wird die Integration entfernt, bleibt die Datei erhalten – nach
 einer Neueinrichtung ist der Bestand wieder da.
 
 ---

@@ -1,38 +1,32 @@
 {
   "app.title": "Filament Manager",
   "app.loading": "Loading …",
-
   "tab.overview": "Overview",
   "tab.manage": "Manage",
   "tab.admin": "Admin",
-
   "action.save": "Save",
   "action.cancel": "Cancel",
   "action.delete": "Delete",
   "action.edit": "Edit",
-
   "toast.saved": "Saved",
   "toast.deleted": "Deleted",
   "toast.id_copied": "ID copied",
-
   "error.generic": "Error: {message}",
   "error.in_use": "Still in use and therefore cannot be deleted.",
   "error.not_found": "The record was not found.",
   "error.no_sealed_spools": "There is no sealed spool left.",
-  "error.no_empty_weight": "No empty-spool weight is set for this entry. Add it to the entry, then a reading from the scale can be converted.",
+  "error.no_empty_weight": "No empty weight is set for this spool type. Add it in the admin area under “Empty weights”.",
   "error.invalid_data": "Please fill in all required fields.",
   "error.not_loaded": "Filament Manager is not loaded.",
   "error.unauthorized": "This requires administrator rights.",
   "error.name_required": "Please enter a name.",
   "error.item_required": "Please select a manufacturer and a filament type.",
-
   "stat.total_spools": "Spools total",
   "stat.sealed": "sealed",
   "stat.open": "opened",
   "stat.weight": "Filament",
   "stat.value": "Inventory value",
   "stat.entries": "Entries",
-
   "filter.search": "Search",
   "filter.search_placeholder": "Manufacturer, type, colour, location …",
   "filter.manufacturer": "Manufacturer",
@@ -40,16 +34,13 @@
   "filter.condition": "Condition",
   "filter.sort": "Sort by",
   "filter.all": "All",
-
   "condition.sealed_only": "Sealed only",
   "condition.open_only": "Opened only",
-
   "sort.manufacturer": "Manufacturer",
   "sort.material": "Type",
   "sort.color": "Colour",
   "sort.remaining": "Remaining",
   "sort.updated": "Last changed",
-
   "label.sealed": "{count} × sealed",
   "label.open_spools": "{count} × opened",
   "label.no_stock": "Out of stock",
@@ -61,14 +52,12 @@
   "label.empty_weight": "Empty weight",
   "label.opened_at": "Opened on",
   "label.spool_index": "Spool {index}",
-
   "overview.empty.title": "No filament recorded yet",
   "overview.empty.text": "Create your first entry in the manage area.",
   "overview.empty.action": "Go to manage",
   "overview.no_match.title": "No matches",
   "overview.no_match.text": "No entries match the selected filters.",
   "overview.no_match.action": "Reset filters",
-
   "manage.title": "Manage inventory",
   "manage.new_item": "New entry",
   "manage.sealed_count": "Sealed spools",
@@ -85,10 +74,8 @@
   "manage.delete_text": "{name} will be removed together with all opened spools. This cannot be undone.",
   "manage.consume_title": "Mark spool as used up?",
   "manage.consume_text": "The opened spool of {name} will be removed from the inventory.",
-
   "dialog.item.new": "New filament entry",
   "dialog.item.edit": "Edit entry",
-
   "field.manufacturer": "Manufacturer",
   "field.material": "Filament type",
   "field.color_name": "Colour",
@@ -115,10 +102,9 @@
   "field.optional": "optional",
   "field.temp_hint": "Leave empty to use the default of the filament type.",
   "field.remaining_hint": "Percent and grams are independent — enter whichever you know.",
-  "field.empty_weight_hint": "Weight of the bare spool. It turns a reading from the scale into the remaining filament.",
+  "field.empty_weight_hint": "Weight of the bare spool. Applies to every colour of this spool type.",
   "field.gross_weight_hint": "Weigh the whole spool and enter the reading — the remaining grams follow from it.",
-  "field.gross_weight_disabled": "Add the empty-spool weight to the entry first, then you can enter a reading here.",
-
+  "field.gross_weight_disabled": "Set the empty weight in the admin area under “Empty weights”, then you can enter a reading here.",
   "admin.title": "Master data",
   "admin.manufacturers": "Manufacturers",
   "admin.materials": "Filament types",
@@ -138,11 +124,19 @@
   "admin.no_temps": "No default temperatures set",
   "admin.only_admin.title": "Administrators only",
   "admin.only_admin.text": "Master data can only be changed by administrators.",
-
   "dialog.manufacturer.new": "New manufacturer",
   "dialog.manufacturer.edit": "Edit manufacturer",
   "dialog.material.new": "New filament type",
   "dialog.material.edit": "Edit filament type",
-
-  "readonly.notice": "You can view the inventory but not change it — that requires administrator rights."
+  "readonly.notice": "You can view the inventory but not change it — that requires administrator rights.",
+  "admin.spool_types": "Empty weights",
+  "admin.spool_types_hint": "The weight of the bare spool applies to every colour of a spool type. A row appears automatically as soon as you add an entry with that combination. Change a value and spools that were weighed follow along.",
+  "admin.new_spool_type": "New combination",
+  "admin.no_spool_types": "No combination yet — add a filament entry first.",
+  "admin.tare_missing": "No empty weight — weighing is blocked for these spools",
+  "admin.tare_set": "Empty weight set — weighing available",
+  "admin.delete_spool_type_title": "Delete combination?",
+  "dialog.spool_type.new": "New combination",
+  "field.empty_weight_short": "Empty weight (g)",
+  "error.duplicate": "This combination already exists."
 }

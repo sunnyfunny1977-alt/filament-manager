@@ -125,7 +125,7 @@
       "message": "Der Filament Manager ist nicht geladen."
     },
     "no_empty_weight": {
-      "message": "Für diesen Eintrag ist kein Leergewicht hinterlegt, daher lässt sich ein Wiegewert nicht umrechnen."
+      "message": "Für diese Rollensorte ist kein Leergewicht hinterlegt. Trage es im Admin-Bereich unter „Leergewichte“ nach."
     }
   }
 }
