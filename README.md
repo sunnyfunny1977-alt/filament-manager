@@ -28,13 +28,20 @@ Ein **Eintrag** ist eine Kombination aus Hersteller + Sorte + Farbe. Darin steck
 | OVP-Rollen | Anzahl noch verschweißter Rollen, z. B. `3` |
 | Angebrochene Rollen | Liste – jede Rolle mit eigener Restmenge |
 | Durchmesser | 1,75 / 2,85 / 3,0 mm |
-| Filament pro Rolle | Nettogewicht in Gramm, z. B. 1000 g |
+| Filament pro Rolle | Nettogewicht in Gramm: 200 / 250 / 500 / 750 / 1000 / 2000 / 3000 g |
 | Lagerort, Notizen | Freitext |
 | Preis, Kaufdatum | Grundlage für den Lagerwert |
 | Düsen-/Betttemperatur | leer = Standard der Filament-Sorte |
 
-**Restmenge:** Prozent und Gramm sind zwei unabhängige Felder. Trage ein, was du weißt –
-geschätzte Prozent, gewogene Gramm oder beides. Nichts wird automatisch umgerechnet.
+**Restmenge:** Die Restmenge wird ausschließlich in **Gramm** geführt. Der Prozentwert, den die
+Übersicht und der Balken zeigen, wird daraus berechnet und lässt sich nicht direkt ändern:
+
+```
+Prozent = Restmenge ÷ Filament pro Rolle × 100      z. B. 380 g von 1000 g = 38 %
+```
+
+So können Prozent und Gramm nie auseinanderlaufen. Solange für eine angebrochene Rolle noch keine
+Menge bekannt ist, steht dort „noch nicht gewogen" statt einer 0.
 
 ### Leergewichte und Wiegen
 
@@ -70,7 +77,7 @@ Wiegewert bleibt gespeichert und wird neu verrechnet (bei 230 g Tara werden aus 
 dann 508 g). Eine von Hand eingetragene Restmenge bleibt dabei unangetastet, denn sie kam nicht
 von der Waage.
 
-Die Prozentangabe wird nie automatisch verändert. Ohne hinterlegtes Leergewicht ist das Wiegefeld
+Die Prozentangabe ergibt sich immer aus der Restmenge. Ohne hinterlegtes Leergewicht ist das Wiegefeld
 gesperrt, und ein Wiegewert über den Service wird mit einer Meldung abgelehnt statt still falsch
 verrechnet.
 
@@ -167,8 +174,8 @@ graue ID-Feld kopiert die ID in die Zwischenablage.
 | Service | Zweck |
 |---|---|
 | `filament_manager.add_spools` | OVP-Rollen hinzufügen oder abziehen (`count`, auch negativ) |
-| `filament_manager.open_spool` | Eine OVP-Rolle anbrechen (startet mit 100 %) |
-| `filament_manager.set_remaining` | Restmenge einer angebrochenen Rolle setzen – als Prozent, Gramm oder `gross_weight_g` (Wiegewert) |
+| `filament_manager.open_spool` | Eine OVP-Rolle anbrechen (startet als volle Rolle) |
+| `filament_manager.set_remaining` | Restmenge einer angebrochenen Rolle setzen – in Gramm oder als `gross_weight_g` (Wiegewert) |
 | `filament_manager.consume_spool` | Angebrochene Rolle als aufgebraucht entfernen |
 
 Bei `set_remaining` und `consume_spool` kann die `spool_id` weggelassen werden – dann wird
@@ -216,9 +223,10 @@ schreibenden Websocket-Befehle lehnen Nicht-Administratoren grundsätzlich ab.
 
 ## Daten und Backup
 
-Alles liegt in einer Datei: `/config/.storage/filament_manager` (Speicherversion 2). Sie ist
+Alles liegt in einer Datei: `/config/.storage/filament_manager` (Speicherversion 3). Sie ist
 Teil jedes Home-Assistant-Backups. Ältere Stände werden beim Start automatisch migriert: ein
-Leergewicht, das früher am einzelnen Eintrag hing, wandert dabei in die passende Kombination. Wird die Integration entfernt, bleibt die Datei erhalten – nach
+Leergewicht, das früher am einzelnen Eintrag hing, wandert dabei in die passende Kombination, und
+eine früher gespeicherte Prozentangabe wird in Gramm umgerechnet. Wird die Integration entfernt, bleibt die Datei erhalten – nach
 einer Neueinrichtung ist der Bestand wieder da.
 
 ---

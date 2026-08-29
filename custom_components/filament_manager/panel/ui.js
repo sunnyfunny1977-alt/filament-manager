@@ -260,6 +260,9 @@ export function colorField({ nameText, nameHex, label, textValue, hexValue, plac
 /** A progress bar that turns orange and then red as the spool empties. */
 export function progressBar(percent) {
   const value = Math.max(0, Math.min(100, Number(percent) || 0));
+  if (percent === null || percent === undefined) {
+    return html`<span class="bar unknown"></span>`;
+  }
   const level = value <= 15 ? "low" : value <= 40 ? "mid" : "";
   return html`<span class="bar ${level}"><span style="width:${value}%"></span></span>`;
 }

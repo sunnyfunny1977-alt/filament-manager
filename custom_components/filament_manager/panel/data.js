@@ -1,8 +1,8 @@
 /**
  * Derived data helpers shared by the overview and the manage view.
  *
- * The gram/percent rule mirrors the backend: use the grams when they are set,
- * otherwise derive them from the percentage, otherwise treat the spool as empty.
+ * Grams are the only stored amount; the fill percentage is derived from them,
+ * exactly as the backend does it.
  */
 
 /** Build lookup maps and convenience accessors for one snapshot. */
@@ -56,29 +56,26 @@ export function itemLabel(item, lookup) {
     .join(" ");
 }
 
-export function spoolGrams(spool, netWeight) {
-  if (spool.remaining_grams !== null && spool.remaining_grams !== undefined) {
-    return Number(spool.remaining_grams);
-  }
-  if (spool.remaining_percent !== null && spool.remaining_percent !== undefined) {
-    return (Number(spool.remaining_percent) * Number(netWeight || 0)) / 100;
-  }
-  return 0;
+export function spoolGrams(spool) {
+  const grams = spool.remaining_grams;
+  return grams === null || grams === undefined ? 0 : Number(grams);
 }
 
-/** Percentage used for the progress bar, derived from grams when needed. */
+/**
+ * How full a spool is, in percent.
+ *
+ * The backend already sends this as `remaining_percent`; the calculation is
+ * the fallback for fixtures that do not carry it. Returns null while the
+ * amount is unknown, so "0 %" is never shown for "not measured yet".
+ */
 export function spoolPercent(spool, netWeight) {
   if (spool.remaining_percent !== null && spool.remaining_percent !== undefined) {
     return Number(spool.remaining_percent);
   }
-  if (
-    spool.remaining_grams !== null &&
-    spool.remaining_grams !== undefined &&
-    Number(netWeight) > 0
-  ) {
-    return Math.min(100, (Number(spool.remaining_grams) / Number(netWeight)) * 100);
-  }
-  return 0;
+  const grams = spool.remaining_grams;
+  const net = Number(netWeight || 0);
+  if (grams === null || grams === undefined || net <= 0) return null;
+  return Math.round(Math.min(100, Math.max(0, (Number(grams) / net) * 100)) * 10) / 10;
 }
 
 export function itemSpoolCount(item) {
@@ -89,7 +86,7 @@ export function itemGrams(item) {
   const net = Number(item.spool_net_weight_g || 0);
   return (
     Number(item.sealed_count || 0) * net +
-    (item.open_spools || []).reduce((sum, spool) => sum + spoolGrams(spool, net), 0)
+    (item.open_spools || []).reduce((sum, spool) => sum + spoolGrams(spool), 0)
   );
 }
 

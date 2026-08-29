@@ -316,6 +316,13 @@ export const panelStyles = `
     border-radius: 999px;
     background: var(--primary-color, #03a9f4);
   }
+  .bar.unknown {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--divider-color, #e0e0e0) 0 6px,
+      transparent 6px 12px
+    );
+  }
   .bar.low > span { background: var(--error-color, #db4437); }
   .bar.mid > span { background: var(--warning-color, #ffa600); }
 

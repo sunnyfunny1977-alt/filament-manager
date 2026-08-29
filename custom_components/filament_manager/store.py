@@ -35,6 +35,7 @@ from .models import (
     normalize_open_spool,
     normalize_spool_type,
     spool_remaining_grams,
+    spool_remaining_percent,
     spool_type_key,
     utcnow_iso,
 )
@@ -100,6 +101,28 @@ def migrate_v1_to_v2(old_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def migrate_v2_to_v3(old_data: dict[str, Any]) -> dict[str, Any]:
+    """Turn the stored percentage into grams.
+
+    Up to version 2 an opened spool could carry a percentage, a gram value or
+    both, and the two were allowed to disagree. The gram value is now the only
+    stored amount and the percentage is derived from it, so a percentage
+    without grams is converted using the size of the spool. Where both were
+    present the grams win: they came from a scale, the percentage was a guess.
+    """
+    for item in old_data.get("items", []):
+        if not isinstance(item, dict):
+            continue
+        net = float(item.get("spool_net_weight_g") or 0)
+        for spool in item.get("open_spools", []):
+            if not isinstance(spool, dict):
+                continue
+            percent = spool.pop("remaining_percent", None)
+            if spool.get("remaining_grams") is None and percent is not None and net > 0:
+                spool["remaining_grams"] = round(float(percent) * net / 100, 1)
+    return old_data
+
+
 class FilamentManagerStore(Store[dict[str, Any]]):
     """Storage helper that knows how to bring older data forward."""
 
@@ -109,6 +132,8 @@ class FilamentManagerStore(Store[dict[str, Any]]):
         """Migrate stored data to the current version."""
         if old_major_version < 2:
             old_data = migrate_v1_to_v2(old_data)
+        if old_major_version < 3:
+            old_data = migrate_v2_to_v3(old_data)
         return old_data
 
 
@@ -463,7 +488,9 @@ class FilamentStore:
             raise FilamentError(ERR_NO_SEALED_SPOOLS)
         existing["sealed_count"] = int(existing["sealed_count"]) - 1
         payload = self._apply_gross_weight(existing, dict(raw or {}))
-        spool = normalize_open_spool({"remaining_percent": 100, **payload, "id": None})
+        # A freshly opened spool is full unless the caller already weighed it.
+        full = {"remaining_grams": existing.get("spool_net_weight_g")}
+        spool = normalize_open_spool({**full, **payload, "id": None})
         existing["open_spools"].append(spool)
         existing["updated_at"] = utcnow_iso()
         self._save_and_notify()
@@ -540,7 +567,7 @@ class FilamentStore:
             "manufacturers": self.manufacturers,
             "materials": self.materials,
             "spool_types": self.spool_types,
-            "items": [{**item, "tare_g": self.item_tare(item)} for item in self.items],
+            "items": [self._item_for_panel(item) for item in self.items],
             "usage": {
                 "manufacturers": {
                     entry["id"]: self._usage_count("manufacturer_id", entry["id"])
@@ -556,6 +583,22 @@ class FilamentStore:
                 },
             },
             "summary": self.summary(),
+        }
+
+    def _item_for_panel(self, item: Item) -> dict[str, Any]:
+        """Enrich an item with the values the panel would otherwise recompute.
+
+        The tare and the fill percentage are both derived, and deriving them
+        here keeps the backend the single source of truth for them.
+        """
+        net = float(item.get("spool_net_weight_g") or 0)
+        return {
+            **item,
+            "tare_g": self.item_tare(item),
+            "open_spools": [
+                {**spool, "remaining_percent": spool_remaining_percent(spool, net)}
+                for spool in item.get("open_spools", [])
+            ],
         }
 
     def summary(self) -> dict[str, Any]:

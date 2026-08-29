@@ -87,10 +87,6 @@
           "name": "Spool ID",
           "description": "ID of the opened spool. Leave empty to use the first opened spool of the entry."
         },
-        "remaining_percent": {
-          "name": "Remaining in percent",
-          "description": "Estimated remaining amount in percent."
-        },
         "remaining_grams": {
           "name": "Remaining in grams",
           "description": "Remaining amount in grams, for example after weighing the spool."

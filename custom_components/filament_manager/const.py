@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "filament_manager"
-VERSION: Final = "1.3.0"
+VERSION: Final = "1.4.0"
 
 # Storage
 STORAGE_KEY: Final = DOMAIN
-STORAGE_VERSION: Final = 2
+STORAGE_VERSION: Final = 3
 
 # Frontend panel
 PANEL_URL_PATH: Final = "filament-manager"

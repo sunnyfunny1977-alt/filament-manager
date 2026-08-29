@@ -20,7 +20,6 @@ import {
   itemSpoolCount,
   itemTare,
   itemTemps,
-  spoolGrams,
   spoolPercent,
 } from "../data.js";
 
@@ -143,19 +142,14 @@ function itemCard(item, lookup) {
 
     ${open.map((spool, index) => {
       const percent = spoolPercent(spool, net);
-      const parts = [
-        spool.remaining_percent !== null && spool.remaining_percent !== undefined
-          ? `${fmtNumber(spool.remaining_percent)} %`
-          : "",
-        spool.remaining_grams !== null && spool.remaining_grams !== undefined
-          ? `${fmtNumber(spool.remaining_grams)} g`
-          : "",
-      ].filter(Boolean);
+      const known = spool.remaining_grams !== null && spool.remaining_grams !== undefined;
       return html`<div class="open-row">
         <span class="chip muted">${t("label.spool_index", { index: index + 1 })}</span>
         ${progressBar(percent)}
         <span class="amount">
-          ${parts.length ? parts.join(" · ") : fmtWeight(spoolGrams(spool, net))}
+          ${known
+            ? `${fmtNumber(percent, 0)} % · ${fmtNumber(spool.remaining_grams)} g`
+            : t("label.not_measured")}
         </span>
       </div>`;
     })}

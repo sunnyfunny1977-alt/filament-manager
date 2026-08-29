@@ -59,8 +59,8 @@ SPOOL_TYPE_FIELDS = {
     vol.Optional("empty_weight_g"): vol.Any(float, int, str, None),
 }
 
+# The fill percentage is derived from the grams and cannot be written.
 SPOOL_FIELDS = {
-    vol.Optional("remaining_percent"): vol.Any(float, int, str, None),
     vol.Optional("remaining_grams"): vol.Any(float, int, str, None),
     # Weighed total including the empty spool; converted by the store.
     vol.Optional("gross_weight_g"): vol.Any(float, int, str, None),

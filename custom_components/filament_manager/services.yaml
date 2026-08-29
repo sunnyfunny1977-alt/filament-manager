@@ -35,15 +35,6 @@ set_remaining:
       example: f6e5d4c3b2a1
       selector:
         text:
-    remaining_percent:
-      required: false
-      selector:
-        number:
-          min: 0
-          max: 100
-          step: 1
-          unit_of_measurement: "%"
-          mode: slider
     remaining_grams:
       required: false
       selector:

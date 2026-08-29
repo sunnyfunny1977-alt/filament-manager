@@ -21,32 +21,24 @@ import {
 } from "../ui.js";
 import { filterAndSort, itemGrams, itemTare, spoolPercent } from "../data.js";
 
-const NET_WEIGHT_PRESETS = [250, 500, 750, 1000, 2000, 3000];
+const NET_WEIGHT_PRESETS = [200, 250, 500, 750, 1000, 2000, 3000];
 const DIAMETERS = [1.75, 2.85, 3.0];
 
 function openSpoolEditor(item, spool, index, tare) {
   const net = Number(item.spool_net_weight_g || 0);
   const hasTare = tare !== null && tare !== undefined;
+  // Read-only: the percentage follows from the grams.
+  const percent = spoolPercent(spool, net);
   return html`<div class="spool-edit" data-item="${item.id}" data-spool="${spool.id}">
     <div class="grow">
       <div class="open-row">
         <span class="chip muted">${t("label.spool_index", { index: index + 1 })}</span>
-        ${progressBar(spoolPercent(spool, net))}
+        ${progressBar(percent)}
+        <span class="amount">${percent === null ? "–" : `${fmtNumber(percent, 0)} %`}</span>
       </div>
       <div class="hint">
         ${t("label.opened_at")}: ${fmtDate(spool.opened_at)}
       </div>
-    </div>
-    <div class="num-field">
-      ${textField({
-        name: "remaining_percent",
-        label: t("field.remaining_percent"),
-        type: "number",
-        min: 0,
-        max: 100,
-        step: 1,
-        value: spool.remaining_percent,
-      })}
     </div>
     <div class="num-field">
       ${textField({

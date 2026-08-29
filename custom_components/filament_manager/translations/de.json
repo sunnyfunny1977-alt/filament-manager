@@ -87,10 +87,6 @@
           "name": "Rollen-ID",
           "description": "ID der angebrochenen Rolle. Leer lassen, um die erste angebrochene Rolle des Eintrags zu verwenden."
         },
-        "remaining_percent": {
-          "name": "Restmenge in Prozent",
-          "description": "Geschätzte Restmenge in Prozent."
-        },
         "remaining_grams": {
           "name": "Restmenge in Gramm",
           "description": "Restmenge in Gramm, zum Beispiel nach dem Wiegen der Rolle."

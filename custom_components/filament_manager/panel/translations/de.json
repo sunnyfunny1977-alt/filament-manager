@@ -90,7 +90,6 @@
   "field.nozzle_temp": "Düsentemperatur (°C)",
   "field.bed_temp": "Betttemperatur (°C)",
   "field.notes": "Notizen",
-  "field.remaining_percent": "Rest (%)",
   "field.remaining_grams": "Rest (g)",
   "field.gross_weight": "Gewogen (g)",
   "field.note": "Notiz",
@@ -100,7 +99,7 @@
   "field.density": "Dichte (g/cm³)",
   "field.optional": "optional",
   "field.temp_hint": "Leer lassen, um den Standard der Sorte zu verwenden.",
-  "field.remaining_hint": "Prozent und Gramm sind unabhängig voneinander — trage ein, was du weißt.",
+  "field.remaining_hint": "Die Restmenge wird in Gramm geführt; der Prozentwert ergibt sich daraus und lässt sich nicht direkt ändern.",
   "field.gross_weight_hint": "Komplette Rolle wiegen und den Wert hier eintragen — die Restmenge in Gramm ergibt sich daraus.",
   "field.gross_weight_disabled": "Hinterlege das Leergewicht beim Hersteller in den Stammdaten, dann kannst du hier den Wiegewert eingeben.",
   "admin.title": "Stammdaten",
@@ -131,5 +130,6 @@
   "admin.spool_types_hint": "Gilt für alle Farben einer Rollensorte. Änderst du einen Wert, ziehen bereits gewogene Rollen automatisch nach.",
   "field.empty_weight_short": "Leergewicht (g)",
   "admin.tare_open": "{count} von {total} Rollensorten ohne Leergewicht",
-  "admin.no_spool_types_for_manufacturer": "Noch keine Rollensorte. Sobald du einen Filament-Eintrag mit diesem Hersteller anlegst, erscheint hier das passende Leergewicht."
+  "admin.no_spool_types_for_manufacturer": "Noch keine Rollensorte. Sobald du einen Filament-Eintrag mit diesem Hersteller anlegst, erscheint hier das passende Leergewicht.",
+  "label.not_measured": "noch nicht gewogen"
 }

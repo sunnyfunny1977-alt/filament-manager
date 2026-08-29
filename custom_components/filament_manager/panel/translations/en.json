@@ -90,7 +90,6 @@
   "field.nozzle_temp": "Nozzle temperature (°C)",
   "field.bed_temp": "Bed temperature (°C)",
   "field.notes": "Notes",
-  "field.remaining_percent": "Left (%)",
   "field.remaining_grams": "Left (g)",
   "field.gross_weight": "Weighed (g)",
   "field.note": "Note",
@@ -100,7 +99,7 @@
   "field.density": "Density (g/cm³)",
   "field.optional": "optional",
   "field.temp_hint": "Leave empty to use the default of the filament type.",
-  "field.remaining_hint": "Percent and grams are independent — enter whichever you know.",
+  "field.remaining_hint": "The remaining amount is kept in grams; the percentage follows from it and cannot be edited directly.",
   "field.gross_weight_hint": "Weigh the whole spool and enter the reading — the remaining grams follow from it.",
   "field.gross_weight_disabled": "Set the empty weight on the manufacturer in the master data, then you can enter a reading here.",
   "admin.title": "Master data",
@@ -131,5 +130,6 @@
   "admin.spool_types_hint": "Applies to every colour of a spool type. Change a value and spools that were weighed follow along.",
   "field.empty_weight_short": "Empty weight (g)",
   "admin.tare_open": "{count} of {total} spool types without an empty weight",
-  "admin.no_spool_types_for_manufacturer": "No spool type yet. As soon as you add a filament entry for this manufacturer, its empty weight appears here."
+  "admin.no_spool_types_for_manufacturer": "No spool type yet. As soon as you add a filament entry for this manufacturer, its empty weight appears here.",
+  "label.not_measured": "not measured yet"
 }

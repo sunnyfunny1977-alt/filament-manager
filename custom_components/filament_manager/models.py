@@ -62,10 +62,13 @@ class SpoolType(TypedDict):
 
 
 class OpenSpool(TypedDict):
-    """A single opened spool with its own remaining amount."""
+    """A single opened spool with its own remaining amount.
+
+    The amount is kept in grams only. The percentage everybody reads off the
+    UI is derived from it, so the two can never drift apart.
+    """
 
     id: str
-    remaining_percent: float | None
     remaining_grams: float | None
     # What the scale last read for the whole spool. Kept so a corrected
     # empty-spool weight can recompute the remaining amount.
@@ -221,16 +224,11 @@ def normalize_spool_type(
 def normalize_open_spool(
     raw: dict[str, Any], existing: OpenSpool | None = None
 ) -> OpenSpool:
-    """Build a valid opened-spool record.
-
-    The percentage and the gram value are independent optional fields, neither
-    is derived from the other.
-    """
+    """Build a valid opened-spool record."""
     base: dict[str, Any] = dict(existing or {})
     base.update(raw)
     return {
         "id": base.get("id") or new_id(),
-        "remaining_percent": _opt_number(base.get("remaining_percent"), 0, 100),
         "remaining_grams": _opt_number(base.get("remaining_grams"), 0, 100000),
         "gross_weight_g": _opt_number(base.get("gross_weight_g"), 0, 100000),
         "opened_at": _opt_date(base.get("opened_at")) or dt_util.now().date().isoformat(),
@@ -280,17 +278,23 @@ def net_from_gross(gross_weight_g: float, empty_weight_g: float) -> float:
 
 
 def spool_remaining_grams(spool: OpenSpool, net_weight_g: float) -> float:
-    """Return the remaining grams of one opened spool.
+    """Return the remaining grams of one opened spool."""
+    grams = spool.get("remaining_grams")
+    return 0.0 if grams is None else float(grams)
 
-    Both remaining fields are entered freely, so the aggregate sensors need a
-    rule: use the grams when given, otherwise derive them from the percentage,
-    otherwise count the spool as empty.
+
+def spool_remaining_percent(spool: OpenSpool, net_weight_g: float) -> float | None:
+    """Return how full an opened spool is, derived from its weight.
+
+    None when nothing is known yet. Values above 100 % are clamped, because a
+    spool holding more than its nominal fill is a measuring error rather than
+    a fuller spool.
     """
-    if spool.get("remaining_grams") is not None:
-        return float(spool["remaining_grams"])
-    if spool.get("remaining_percent") is not None:
-        return float(spool["remaining_percent"]) * float(net_weight_g) / 100
-    return 0.0
+    grams = spool.get("remaining_grams")
+    net = float(net_weight_g or 0)
+    if grams is None or net <= 0:
+        return None
+    return round(min(100.0, max(0.0, float(grams) / net * 100)), 1)
 
 
 def item_total_spools(item: Item) -> int:
